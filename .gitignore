@@ -6,6 +6,10 @@ __pycache__/
 
 # Credentials and local/private research data
 .env
+.env.*
+*.key
+*.pem
+credentials*
 universe.csv
 pm_portfolio.json
 positions.json
@@ -19,6 +23,13 @@ Finance Knowledge Graph/
 *.xlsx
 
 # Local dependency bundles
+.ta-tmp/
 .ta-deps/
 .ta-src/
+.xlsx-deps/
 .sandbox-deps/
+*.log
+*.db
+*.csv
+*.json
+!screeners.json

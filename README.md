@@ -1,15 +1,12 @@
-# Meta Screener CLI
+# Meta Screener CLI 🔎
 
-**A local-first stock-screening CLI that runs checks in paced stages and ranks companies by cross-screener overlap.**
+**One command. Your whole screening workflow. A cleaner way to find companies worth a closer look.**
 
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
-![Yahoo Finance](https://img.shields.io/badge/data-Yahoo%20Finance-6e89b5.svg)
+The Meta Screener CLI brings your registered stock screens into a paced, staged run. Its default command applies 47 checks, ranks companies by cross-screener breadth, and prints the leading overlap candidates. This repository now also carries the broader 82-module Finance AI source toolkit.
 
-Meta Screener CLI brings the project's Python screeners into one command. Its default run applies 47 checks to a company universe, prints the leading overlap candidates, and saves an auditable research note. The wider suite adds market context, company signals, catalysts, and local knowledge-graph scans.
+> 🧭 Screens help you find research leads. They do not make investment decisions or place orders.
 
-It screens and reports. It does not place trades or generate a buy/sell recommendation.
-
-## Quick start
+## ⚡ Get started
 
 Requires Python 3.10 or newer.
 
@@ -26,98 +23,75 @@ Run the core Meta Screen:
 meta-screener
 ```
 
-The default run uses one worker and 25-symbol batches with a 10-second cooldown between full batches. With the 100-company demo universe, that adds about 30 seconds of deliberate waiting; Yahoo response time adds to the total. The demo list is for trying the workflow, not a recommended portfolio or a record of anyone's holdings.
+The default run uses one worker, groups up to 25 symbols, and pauses 10 seconds between full batches. With the 100-company demo universe, that is about 30 seconds of planned cooldown, plus Yahoo Finance response time. The demo universe is illustrative, not a recommended portfolio.
 
-## Common commands
+## 🎛️ Everyday commands
 
 ```bash
-# Show the screener catalog
+# Browse the registered screens and their requirements
 meta-screener list
 
-# List every check and criterion in the core Meta Screen
+# See all 47 checks in the core screen
 meta-screener list --checks
 
 # Preview order and file effects without launching screeners
 meta-screener plan --all --gap-seconds 15
 
-# Run one stage or all default-enabled screeners
+# Run a stage or all registered screens
 meta-screener run --stage discovery
 meta-screener run --all --gap-seconds 15
+
+# Check the installed version
+meta-screener --version
 ```
 
-The `run --all` option runs the default-enabled catalog in stage order. Use `meta-screener run --screener <id>` for one registered screener. `--gap-seconds` accepts 10–30 seconds and defaults to 15 for explicit `run` commands.
+`meta-screener run --all` launches the 16 default-enabled entries from `screeners.json`. Use `meta-screener run --screener <id>` for one. The CLI catalog is the source of truth for what this command launches; the other Python modules are supporting Finance AI workflows and are not automatically run.
 
-## Core Meta Screen
-
-The 47 checks cover six groups:
+## 📊 The 47-check Meta Screen
 
 | Group | Checks | Examples |
 | --- | ---: | --- |
-| Momentum | 4 | Six- and twelve-month relative strength, re-acceleration, pullback in an uptrend |
-| Technical | 4 | Moving-average structure, RSI, 52-week high/low position |
-| Valuation | 5 | Forward P/E, price-to-book, price-to-sales, GARP, peer-relative value |
+| Momentum | 4 | Relative strength, re-acceleration, pullback in an uptrend |
+| Technical | 4 | Moving-average structure, RSI, 52-week levels |
+| Valuation | 5 | Forward P/E, price-to-book, price-to-sales, GARP, peer value |
 | Fundamental | 3 | Revenue growth, return on equity, net margin |
-| Theme rotation | 23 | Semiconductors/AI, defense, energy, healthcare, banks, robotics, and regional baskets |
-| Insider, earnings, and quality | 8 | Insider buying, earnings drift, Piotroski, cash conversion, buybacks, capital discipline |
+| Theme rotation | 23 | Semiconductors/AI, defense, energy, healthcare, banks, robotics, and regions |
+| Insider, earnings, and quality | 8 | Insider buying, earnings drift, Piotroski, cash conversion, buybacks |
 
-The ranking counts breadth across five signal families: price action, valuation, business quality, earnings, and insider activity. Related checks are not treated as independent confirmations. Theme matches add context, not another score family. Missing inputs are reported as unavailable rather than as failed checks.
+The ranking measures breadth across five signal families: price action, valuation, business quality, earnings, and insider activity. Related checks do not count as independent confirmations. Theme hits add context rather than another score family. Missing inputs show as unavailable, not failed.
 
-## Registered screeners
+## 🧰 What is in this repo
 
-| Stage | Screener | What it checks |
-| --- | --- | --- |
-| Candidate discovery | `meta-overlap` | The 47-check cross-signal Meta Screen |
-| Candidate discovery | `fundamental-rotation` | Stored revenue growth, margin trend, and valuation history |
-| Candidate discovery | `revenue-growth-momentum` | Direction of annual and quarterly revenue growth |
-| Market context | `sector-rotation` | Relative performance across sector ETFs |
-| Market context | `market-breadth` | Stored breadth and theme-return measures |
-| Market context | `volatility-regime` | VIX and volatility conditions |
-| Market context | `market-sentiment` | VIX and QQQ/SPY market proxies |
-| Market context | `commodities-fx` | Commodity futures and major currency proxies |
-| Market context | `cot-futures-proxy` | Futures-positioning proxy; not official CFTC COT data |
-| Company signals | `analyst-consensus` | Ratings, analyst count, and price-target range |
-| Company signals | `short-interest` | Short interest for selected holdings or tickers |
-| Company signals | `dividend-analysis` | Yield and payout context for selected holdings |
-| Company signals | `options-activity` | Available options activity for selected holdings |
-| Events and research | `catalyst-calendar` | Catalysts already recorded in the local knowledge graph |
-| Events and research | `macro-calendar` | Approximate recurring macro events; confirm dates with official sources |
-| Events and research | `research-frontier` | Open research questions linked to upcoming catalysts |
-| Optional tracking | `screen-history` | Post-screen returns; excluded from `run --all` and requires `officecli` |
+This v0.2.0 snapshot includes **82 Python source modules** from the Finance AI workflow, including the screening catalog and supporting research, knowledge-graph, data-maintenance, portfolio, and risk utilities. The screen catalog remains focused: only entries in `screeners.json` are launched by the `meta-screener` command.
 
-Use `meta-screener list` for each screen's data source, requirements, and file effects.
+Some supporting scripts expect local Finance Knowledge Graph data, `officecli`, or other workflow-specific inputs. The core screener dependencies are in `requirements-screening.txt`; check each script's usage text for its own requirements.
 
-## Pacing and Yahoo Finance
+## 🛡️ Yahoo pacing
 
-- Screeners run sequentially. The core screen uses one worker and pauses between ticker batches.
-- The runner waits between Yahoo-backed scripts and stages. Cooldown length can be set from 10 to 30 seconds.
-- A detected 429/rate-limit response stops the current run. The CLI does not retry automatically or start later Yahoo jobs.
-- Yahoo does not publish a stable request quota for this workflow. Pacing lowers burst risk but cannot guarantee uninterrupted access.
-- Separate screeners do not share a result cache yet. Avoid rerunning Yahoo-backed stages unnecessarily.
+- Registered screens run sequentially; the core screen uses one worker and ticker batches.
+- Cooldowns can be set from 10 to 30 seconds between Yahoo-backed work.
+- A detected 429/rate-limit response stops the run. The CLI does not retry automatically or start later Yahoo jobs.
+- Yahoo does not publish a stable request quota. Pacing lowers burst risk but cannot guarantee uninterrupted access.
+- Separate screeners do not share a result cache yet, so avoid rerunning Yahoo-backed stages unnecessarily.
 
-Use `meta-screener plan --all --gap-seconds 15` to see the exact order and listed outputs before a broad run.
+Preview broad runs with `meta-screener plan --all --gap-seconds 15` before launching them.
 
-## Local data and outputs
+## 🗂️ Private data stays local
 
-The public repository contains screening code and a generic demo universe, not portfolio positions or research-history files. Local files such as `pm_portfolio.json`, `positions.json`, `universe.csv`, `rotation_history.csv`, and generated notes are excluded from Git. `meta_screen.py` automatically uses a local `universe.csv` when present; otherwise it uses the built-in demo list. The CSV columns are `ticker`, `name`, and `theme`.
+The public repository includes source code and a generic demo universe. It does **not** include portfolio positions, private watchlists, generated screen history, personal research notes, or credentials. Local files such as `pm_portfolio.json`, `positions.json`, `universe.csv`, `rotation_history.csv`, and `Trackers.xlsx` are ignored by Git.
 
-The default Meta Screen writes a dated note under `~/Documents/Finance Knowledge Graph/Notes/` and updates `rotation_history.csv` in this project folder. Some other screens write their own knowledge-graph notes or CSVs. `plan` is side-effect free; `run` can write the files shown in the plan and catalog.
+A local `universe.csv` overrides the demo universe. The core Meta Screen writes a dated note under `~/Documents/Finance Knowledge Graph/Notes/` and updates the local `rotation_history.csv`. Other modules may write their own notes, CSVs, or workbooks. `plan` is side-effect free; `run` may write the outputs shown in the catalog.
 
-Several screens use stored Finance Knowledge Graph data. Holdings-oriented screens use the local `~/finance-ai/pm_portfolio.json` file when no explicit tickers are supplied. These personal files are never included in this repository.
+## 🌱 Up next
 
-## Ideas for later
-
-Potential additions to evaluate with point-in-time data and out-of-sample checks:
+Good candidates for further evaluation with point-in-time data and out-of-sample checks:
 
 - Earnings-estimate revision breadth and dispersion
-- Share issuance and dilution, separated from stock-based compensation and repurchases
+- Share issuance and dilution
 - Multi-year cash conversion and accruals
 - A configurable liquidity floor
 - Industry-aware balance-sheet resilience
 
-The registry connects existing Python screeners. It does not yet let non-coders author new rules. A later version could support safe rule files with a preview and backtest before activation.
-
-## Scope
-
-This project is separate from `tradingcli`. It only screens and reports. Yahoo Finance data may be delayed, incomplete, or unavailable, and a screen pass is a research lead rather than an investment conclusion.
+The registry connects existing Python screens; it does not yet let non-coders author new rules. A later version could add safe rule files with a preview and backtest before activation.
 
 No license file is included yet.

@@ -46,8 +46,6 @@ UNIVERSE_FILE = os.path.join(FINANCE_AI, "universe.csv")
 ROTATION_CSV = os.path.join(FINANCE_AI, "rotation_history.csv")
 
 # Default curated universe (ticker, name, theme) — superset; universe.csv overrides.
-# Public demo universe: broad, familiar US listings for a first run.
-# Keep personal watchlists in a local, git-ignored universe.csv file.
 _DEMO_TICKERS = """
 AAPL MSFT NVDA AMZN GOOGL GOOG META AVGO ORCL CRM
 AMD INTC CSCO IBM QCOM TXN AMAT MU LRCX KLAC
@@ -61,6 +59,8 @@ ABBV MRK PFE AMGN GILD UNH ELV CVS ABT MDT
 ISRG TMO DHR BMY REGN CI MCK SPGI MSCI ADP
 """.split()
 DEFAULT_UNIVERSE = [(ticker, ticker, "demo") for ticker in _DEMO_TICKERS]
+
+
 
 THEME_ETFS = {
     "semis/AI": ("SMH", ["NVDA", "AMD", "AVGO", "MU", "AEHR", "SMCI", "TSM", "ASML", "ARM", "ANET"]),

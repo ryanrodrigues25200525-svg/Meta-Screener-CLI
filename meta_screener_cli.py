@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""List, plan, and run registered stock screeners in rate-limited stages."""
+"""List, plan, and run the Finance AI screeners in rate-limited stages."""
 
 from __future__ import annotations
 
@@ -15,7 +15,23 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parent
+def find_project_root() -> Path:
+    candidates = []
+    configured_root = __import__("os").environ.get("FINANCE_AI_HOME")
+    if configured_root:
+        candidates.append(Path(configured_root).expanduser())
+    candidates.extend((Path.cwd(), Path(__file__).resolve().parent))
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            continue
+        if (resolved / "screeners.json").is_file() and (resolved / "meta_screen.py").is_file():
+            return resolved
+    raise RuntimeError("Finance AI folder not found; run from the repository root or set FINANCE_AI_HOME.")
+
+
+ROOT = find_project_root()
 REGISTRY_PATH = ROOT / "screeners.json"
 VERSION_PATH = ROOT / "VERSION"
 META_SCREEN_PATH = ROOT / "meta_screen.py"
@@ -316,7 +332,7 @@ def add_selection_arguments(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="meta-screener",
-        description="List, plan, and run stock screeners in sequential, rate-limited stages.",
+        description="List, plan, and run finance-ai screeners in sequential, rate-limited stages.",
     )
     parser.add_argument("--version", action="version", version=f"Meta Screener CLI {version()}")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -338,6 +354,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     arguments = list(sys.argv[1:] if argv is None else argv)
     if not arguments:
+        # The common one-command path runs the 47-check candidate meta-screen.
+        # Single-worker batches keep request concurrency low; 25-symbol groups
+        # add three 10-second pauses over the current 100-company universe.
         arguments = [
             "run", "--screener", "meta-overlap",
             "--gap-seconds", "10", "--workers", "1", "--batch-size", "25",
