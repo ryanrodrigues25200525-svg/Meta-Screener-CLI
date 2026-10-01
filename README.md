@@ -1,12 +1,10 @@
 # Meta Screener CLI 🔎
 
-**One command. Your whole screening workflow. A cleaner way to find companies worth a closer look.**
+**Find stocks worth a closer look—without running scripts one by one.**
 
-The Meta Screener CLI brings your registered stock screens into a paced, staged run. Its default command applies 47 checks, ranks companies by cross-screener breadth, and prints the leading overlap candidates. This repository now also carries the broader 82-module Finance AI source toolkit.
+Type `meta-screener` to run the core screen. It checks a demo universe, ranks companies by overlap across 47 signals, and prints the leading names. The repo also includes 82 Python tools from the wider Finance AI workflow.
 
-> 🧭 Screens help you find research leads. They do not make investment decisions or place orders.
-
-## ⚡ Get started
+## 🚀 Install
 
 Requires Python 3.10 or newer.
 
@@ -17,81 +15,38 @@ python -m pip install -r requirements-screening.txt
 python -m pip install -e .
 ```
 
-Run the core Meta Screen:
+## ▶️ Run
 
 ```bash
 meta-screener
 ```
 
-The default run uses one worker, groups up to 25 symbols, and pauses 10 seconds between full batches. With the 100-company demo universe, that is about 30 seconds of planned cooldown, plus Yahoo Finance response time. The demo universe is illustrative, not a recommended portfolio.
-
-## 🎛️ Everyday commands
+To explore or run more screens:
 
 ```bash
-# Browse the registered screens and their requirements
 meta-screener list
-
-# See all 47 checks in the core screen
 meta-screener list --checks
-
-# Preview order and file effects without launching screeners
-meta-screener plan --all --gap-seconds 15
-
-# Run a stage or all registered screens
+meta-screener plan --all
 meta-screener run --stage discovery
-meta-screener run --all --gap-seconds 15
-
-# Check the installed version
-meta-screener --version
+meta-screener run --all
 ```
 
-`meta-screener run --all` launches the 16 default-enabled entries from `screeners.json`. Use `meta-screener run --screener <id>` for one. The CLI catalog is the source of truth for what this command launches; the other Python modules are supporting Finance AI workflows and are not automatically run.
+`run --all` runs the 16 screens registered in `screeners.json`. The other Python files are supporting tools; they do not run automatically.
 
-## 📊 The 47-check Meta Screen
+## 📊 What the core screen checks
 
-| Group | Checks | Examples |
-| --- | ---: | --- |
-| Momentum | 4 | Relative strength, re-acceleration, pullback in an uptrend |
-| Technical | 4 | Moving-average structure, RSI, 52-week levels |
-| Valuation | 5 | Forward P/E, price-to-book, price-to-sales, GARP, peer value |
-| Fundamental | 3 | Revenue growth, return on equity, net margin |
-| Theme rotation | 23 | Semiconductors/AI, defense, energy, healthcare, banks, robotics, and regions |
-| Insider, earnings, and quality | 8 | Insider buying, earnings drift, Piotroski, cash conversion, buybacks |
+The 47 checks look at price momentum, technical signals, valuation, business fundamentals, themes, insider activity, earnings, and company quality. The ranking favors breadth across signal families. Related checks are not treated as separate confirmations, and missing data is shown as unavailable.
 
-The ranking measures breadth across five signal families: price action, valuation, business quality, earnings, and insider activity. Related checks do not count as independent confirmations. Theme hits add context rather than another score family. Missing inputs show as unavailable, not failed.
+## 🛡️ Yahoo Finance pacing
 
-## 🧰 What is in this repo
+The core screen uses one worker and batches up to 25 symbols, with a 10-second pause between full batches. A 100-company run has about 30 seconds of planned cooldown, plus network time. If Yahoo returns a rate-limit error, the CLI stops and does not retry automatically.
 
-This v0.2.0 snapshot includes **82 Python source modules** from the Finance AI workflow, including the screening catalog and supporting research, knowledge-graph, data-maintenance, portfolio, and risk utilities. The screen catalog remains focused: only entries in `screeners.json` are launched by the `meta-screener` command.
+## 🗂️ Local data
 
-Some supporting scripts expect local Finance Knowledge Graph data, `officecli`, or other workflow-specific inputs. The core screener dependencies are in `requirements-screening.txt`; check each script's usage text for its own requirements.
+The public repo does not include portfolio positions, private watchlists, credentials, or generated research history. Personal files such as `pm_portfolio.json`, `positions.json`, and `universe.csv` stay local and are ignored by Git.
 
-## 🛡️ Yahoo pacing
+The core screen writes a dated note to your Finance Knowledge Graph and updates local screen history. Use `meta-screener plan --all` to preview the wider run before launching it. Some of the 82 supporting scripts need additional local data or tools.
 
-- Registered screens run sequentially; the core screen uses one worker and ticker batches.
-- Cooldowns can be set from 10 to 30 seconds between Yahoo-backed work.
-- A detected 429/rate-limit response stops the run. The CLI does not retry automatically or start later Yahoo jobs.
-- Yahoo does not publish a stable request quota. Pacing lowers burst risk but cannot guarantee uninterrupted access.
-- Separate screeners do not share a result cache yet, so avoid rerunning Yahoo-backed stages unnecessarily.
+A screen pass is a research lead, not an investment decision. The CLI does not place orders.
 
-Preview broad runs with `meta-screener plan --all --gap-seconds 15` before launching them.
-
-## 🗂️ Private data stays local
-
-The public repository includes source code and a generic demo universe. It does **not** include portfolio positions, private watchlists, generated screen history, personal research notes, or credentials. Local files such as `pm_portfolio.json`, `positions.json`, `universe.csv`, `rotation_history.csv`, and `Trackers.xlsx` are ignored by Git.
-
-A local `universe.csv` overrides the demo universe. The core Meta Screen writes a dated note under `~/Documents/Finance Knowledge Graph/Notes/` and updates the local `rotation_history.csv`. Other modules may write their own notes, CSVs, or workbooks. `plan` is side-effect free; `run` may write the outputs shown in the catalog.
-
-## 🌱 Up next
-
-Good candidates for further evaluation with point-in-time data and out-of-sample checks:
-
-- Earnings-estimate revision breadth and dispersion
-- Share issuance and dilution
-- Multi-year cash conversion and accruals
-- A configurable liquidity floor
-- Industry-aware balance-sheet resilience
-
-The registry connects existing Python screens; it does not yet let non-coders author new rules. A later version could add safe rule files with a preview and backtest before activation.
-
-No license file is included yet.
+This is separate from [Trading CLI](https://github.com/ryanrodrigues25200525-svg/tradingcli), which is for paper-trading workflows.
