@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Credentials and local/private research data
+.env
+universe.csv
+pm_portfolio.json
+positions.json
+rotation_history.csv
+rotation_screen.csv
+verdicts.json
+source_correlation.json
+event_grades.json
+data_quality.json
+Finance Knowledge Graph/
+*.xlsx
+
+# Local dependency bundles
+.ta-deps/
+.ta-src/
+.sandbox-deps/

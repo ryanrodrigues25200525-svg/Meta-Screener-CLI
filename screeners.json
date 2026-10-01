@@ -1,0 +1,373 @@
+{
+  "version": "0.1.1",
+  "stages": [
+    {
+      "id": "discovery",
+      "name": "Candidate discovery",
+      "description": "Cross-screen overlap and stored-fundamentals screens."
+    },
+    {
+      "id": "market-context",
+      "name": "Market and factor context",
+      "description": "Sector, breadth, volatility, sentiment, commodity, FX, and futures context."
+    },
+    {
+      "id": "company-signals",
+      "name": "Company and holdings signals",
+      "description": "Analyst estimates and portfolio-holdings screens."
+    },
+    {
+      "id": "events",
+      "name": "Catalysts and open research",
+      "description": "Upcoming catalyst and open-question scans from the Finance Knowledge Graph."
+    },
+    {
+      "id": "tracking",
+      "name": "Screen history tracking",
+      "description": "Optional post-screen return tracking; excluded from the default all run."
+    }
+  ],
+  "screeners": [
+    {
+      "id": "meta-overlap",
+      "name": "Meta Screen: Cross-Signal Breadth",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 47 registered checks across price action, valuation, business quality, earnings, insider activity, and themes. Ranks family breadth and raw hit counts separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Built-in demo universe; optional --universe CSV",
+        "Local Finance Knowledge Graph company/theme notes"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "fundamental-rotation",
+      "name": "Fundamental Rotation Screen",
+      "file": "rotation_screen.py",
+      "stage": "discovery",
+      "description": "Ranks stored company fundamentals by revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
+      "provider": "Local Finance Knowledge Graph history",
+      "yahoo": false,
+      "requirements": [],
+      "reads": [
+        "Datasets/History/fundamentals_annual",
+        "Datasets/History/fundamentals_quarterly"
+      ],
+      "writes": [
+        "rotation_screen.csv"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "revenue-growth-momentum",
+      "name": "Revenue Growth Momentum",
+      "file": "growth_momentum.py",
+      "stage": "discovery",
+      "description": "Compares each company's own annual and quarterly revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
+      "provider": "Local Finance Knowledge Graph history",
+      "yahoo": false,
+      "requirements": [],
+      "reads": [
+        "Datasets/History/fundamentals_annual",
+        "Datasets/History/fundamentals_quarterly"
+      ],
+      "writes": [],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "sector-rotation",
+      "name": "Sector Rotation",
+      "file": "sector_rotation.py",
+      "stage": "market-context",
+      "description": "Compares sector ETF performance over short and medium horizons.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas"
+      ],
+      "reads": [
+        "Sector ETF prices"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Sector-Rotation.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "market-breadth",
+      "name": "Market Breadth and Theme Rotation",
+      "file": "breadth_rotation.py",
+      "stage": "market-context",
+      "description": "Measures shares above a 10-month moving average, positive 3-month returns, and median theme returns from stored monthly prices.",
+      "provider": "Local Finance Knowledge Graph history",
+      "yahoo": false,
+      "requirements": [],
+      "reads": [
+        "Datasets/History/prices_monthly",
+        "Themes/*.md"
+      ],
+      "writes": [],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "volatility-regime",
+      "name": "Volatility Regime",
+      "file": "volatility_regime.py",
+      "stage": "market-context",
+      "description": "Summarizes VIX levels and term-structure/regime inputs from available market series.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "VIX and SPY price histories"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Volatility-Regime.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "market-sentiment",
+      "name": "Market Sentiment Context",
+      "file": "market_sentiment.py",
+      "stage": "market-context",
+      "description": "Reports VIX and QQQ/SPY market proxies used by the local sentiment summary.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas"
+      ],
+      "reads": [
+        "VIX, QQQ, and SPY price histories"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Market-Sentiment.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "commodities-fx",
+      "name": "Commodities and FX Context",
+      "file": "commodities_fx.py",
+      "stage": "market-context",
+      "description": "Summarizes commodity futures and major FX proxies.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas"
+      ],
+      "reads": [
+        "Commodity futures and currency-symbol histories"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Commodities-FX.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "cot-futures-proxy",
+      "name": "Futures Positioning Proxy",
+      "file": "cot_report.py",
+      "stage": "market-context",
+      "description": "Uses futures price/volume proxies; it is not an official CFTC Commitments of Traders data pull.",
+      "provider": "Yahoo Finance via yfinance proxy",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas"
+      ],
+      "reads": [
+        "Major futures contract histories"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> COT-Report.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "analyst-consensus",
+      "name": "Analyst Consensus Snapshot",
+      "file": "analyst_scan.py",
+      "stage": "company-signals",
+      "description": "Collects recommendation, price-target range, and analyst-count fields for graph-tracked companies.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance"
+      ],
+      "reads": [
+        "Finance Knowledge Graph company tickers"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Analyst Consensus.md"
+      ],
+      "default_enabled": true,
+      "batchable": true,
+      "args": []
+    },
+    {
+      "id": "short-interest",
+      "name": "Portfolio Short-Interest Screen",
+      "file": "short_interest.py",
+      "stage": "company-signals",
+      "description": "Fetches short-interest fields for portfolio holdings or an explicit ticker list.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance"
+      ],
+      "reads": [
+        "pm_portfolio.json unless --tickers is supplied"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Short-Interest.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "dividend-analysis",
+      "name": "Portfolio Dividend Screen",
+      "file": "dividend_analysis.py",
+      "stage": "company-signals",
+      "description": "Summarizes dividend yield and payout context for portfolio holdings.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance"
+      ],
+      "reads": [
+        "pm_portfolio.json"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Dividend-Analysis.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "options-activity",
+      "name": "Portfolio Options-Activity Screen",
+      "file": "unusual_options.py",
+      "stage": "company-signals",
+      "description": "Checks available options-chain activity for portfolio holdings or an explicit ticker list; provider coverage may be incomplete.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance"
+      ],
+      "reads": [
+        "pm_portfolio.json unless --tickers is supplied"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Unusual-Options.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "catalyst-calendar",
+      "name": "Company Catalyst Calendar",
+      "file": "catalyst_scan.py",
+      "stage": "events",
+      "description": "Collects upcoming events already recorded in the Finance Knowledge Graph.",
+      "provider": "Local Finance Knowledge Graph",
+      "yahoo": false,
+      "requirements": [],
+      "reads": [
+        "Important Dates/*.md"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Catalysts.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "macro-calendar",
+      "name": "Macro Calendar",
+      "file": "econ_calendar.py",
+      "stage": "events",
+      "description": "Builds an approximate recurring macro-event calendar; dates should be confirmed with official sources.",
+      "provider": "Local recurring-calendar rules",
+      "yahoo": false,
+      "requirements": [],
+      "reads": [
+        "Built-in approximate recurring macro schedule"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Econ-Calendar.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "research-frontier",
+      "name": "Open Research Questions",
+      "file": "frontier_scan.py",
+      "stage": "events",
+      "description": "Surfaces unresolved research questions and linked catalysts already recorded in the Finance Knowledge Graph.",
+      "provider": "Local Finance Knowledge Graph",
+      "yahoo": false,
+      "requirements": [],
+      "reads": [
+        "Finance Knowledge Graph research notes"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Frontier.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "screen-history",
+      "name": "Meta-Screen Outcome Tracker",
+      "file": "screen_tracker.py",
+      "stage": "tracking",
+      "description": "Tracks returns after prior meta-screen flags; this is an outcome tracker, not a candidate screener.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "officecli for workbook output"
+      ],
+      "reads": [
+        "Prior Meta-Screen notes"
+      ],
+      "writes": [
+        "Trackers.xlsx unless --dry is supplied"
+      ],
+      "default_enabled": false,
+      "args": [
+        "--dry"
+      ]
+    }
+  ]
+}
