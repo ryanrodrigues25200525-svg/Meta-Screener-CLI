@@ -49,4 +49,4 @@ The core screen writes a dated note to your Finance Knowledge Graph and updates 
 
 A screen pass is a research lead, not an investment decision. The CLI does not place orders.
 
-This is separate from [Trading CLI](https://github.com/ryanrodrigues25200525-svg/tradingcli), which is for paper-trading workflows.
+This is separate from [Trading CLI](https://github.com/ryanrodrigues25200525-svg/Trading-CLI), which is for paper-trading workflows.
