@@ -96,7 +96,11 @@ def _default_provider(ticker: str, op: str = "info", **kwargs: Any) -> Any:
     if op == "earnings_dates":
         return stock.get_earnings_dates(limit=kwargs.get("limit", 12))
     if op == "news":
-        return stock.news
+        stories = stock.news or []
+        if not stories:
+            search = yf.Search(ticker, news_count=kwargs.get("count", 10))
+            stories = search.news or []
+        return stories
     if op == "options":
         expirations = stock.options
         return list(expirations) if expirations else []
@@ -184,9 +188,12 @@ class YahooClient:
             except Exception as exc:
                 raise_if_yahoo_rate_limit(exc, context)
                 raise
-            self._memory[key] = (time.time(), value)
-            if self._cache_dir is not None:
-                self._write_disk(key, value)
+            # Never cache empty story lists: a transiently empty news
+            # response must not poison the cache for a full TTL.
+            if not (op == "news" and value == []):
+                self._memory[key] = (time.time(), value)
+                if self._cache_dir is not None:
+                    self._write_disk(key, value)
             return value
 
     def _disk_path(self, key: str) -> Path:

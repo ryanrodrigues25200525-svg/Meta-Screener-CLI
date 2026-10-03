@@ -9,6 +9,43 @@ from pathlib import Path
 
 
 class TestYahooClient(unittest.TestCase):
+    def test_default_provider_falls_back_to_search_when_ticker_news_empty(self):
+        import sys
+        import types
+        import yahoo_client
+
+        stories = [{"title": "t", "publisher": "p", "link": "u", "providerPublishTime": 1}]
+
+        class FakeTicker:
+            def __init__(self, ticker):
+                self.ticker = ticker
+
+            @property
+            def news(self):
+                return []
+
+        class FakeSearch:
+            def __init__(self, ticker, news_count=10):
+                self._stories = stories
+                self.ticker = ticker
+            @property
+            def news(self):
+                return self._stories
+
+        fake_yf = types.ModuleType("yfinance")
+        fake_yf.Ticker = FakeTicker
+        fake_yf.Search = FakeSearch
+        old = sys.modules.get("yfinance")
+        sys.modules["yfinance"] = fake_yf
+        try:
+            result = yahoo_client._default_provider("AAPL", op="news")
+        finally:
+            if old is None:
+                del sys.modules["yfinance"]
+            else:
+                sys.modules["yfinance"] = old
+        self.assertEqual(result, stories)
+
     def test_shared_client_serializes_and_stops_on_rate_limit(self):
         from yahoo_client import YahooClient
 
