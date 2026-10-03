@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { blankRunState } from "../src/events.js";
+import { blankRunState, pushStderr } from "../src/events.js";
+import { detailText } from "../src/app.js";
+import { SelectionModel } from "../src/registry.js";
 import { consumeLines, createLineAccumulator, startRunner } from "../src/runner.js";
 import type { RunEvent } from "../src/types.js";
 
@@ -105,5 +107,76 @@ describe("runner stream separation", () => {
     expect(stderrLines).toContain("warning: partial download retry");
     expect(state.byScreener["demo"]?.status).toBe("running");
     expect(state.running).toBe(false);
+  });
+});
+
+describe("failed-screener stderr diagnostics", () => {
+  test("failing child stderr is captured and bounded", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tui-runner-fail-"));
+    writeFileSync(
+      join(dir, "meta_screener_cli.py"),
+      [
+        `import sys`,
+        `def out(s):`,
+        `    sys.stdout.write(s); sys.stdout.flush()`,
+        `def err(s):`,
+        `    sys.stderr.write(s); sys.stderr.flush()`,
+        `out('{"type": "run_started", "run_id": "r-fail"}\\n')`,
+        `out('{"type": "screener_started", "run_id": "r-fail", "screener_id": "demo"}\\n')`,
+        `err('Traceback (most recent call last):\\n')`,
+        `err('Exception: boom\\n')`,
+        `for i in range(300):`,
+        `    err(f"boom detail line {i}\\n")`,
+        `err('X' * 500 + '\\n')`,
+        `out('{"type": "screener_finished", "run_id": "r-fail", "screener_id": "demo", "status": "failed", "exit_code": 1}\\n')`,
+        `out('{"type": "run_finished", "run_id": "r-fail", "status": "failed (1)"}\\n')`,
+        `sys.exit(1)`,
+        ``,
+      ].join("\n"),
+    );
+    const state = blankRunState();
+    const seen: string[] = [];
+    const started = await startRunner({
+      python: "python3",
+      root: dir,
+      ids: ["demo"],
+      active: null,
+      state,
+      onEvent: () => {},
+      // Same wiring as the dashboard launch(): route stderr lines to the
+      // currently-running screener entry with bounded storage.
+      onStderr: (line) => {
+        seen.push(line);
+        const running = Object.keys(state.byScreener).find((id) => state.byScreener[id]?.status === "running") ?? "demo";
+        pushStderr(state, running, line);
+      },
+    });
+    const exitCode = await started.active.promise;
+    expect(exitCode).toBe(1);
+    // driven by stub child that exits 1 with stderr lines; assert seen contains diagnostic
+    expect(seen.join("\n")).toMatch(/traceback|boom/i);
+    // stderr never leaks into stdout JSONL event parsing
+    expect(state.running).toBe(false);
+    expect(state.byScreener["demo"]?.status).toBe("failed");
+    // bounded storage: last 50 lines kept, each truncated to 200 chars
+    const stored = state.byScreener["demo"]?.stderr ?? [];
+    expect(stored.length).toBe(50);
+    expect(stored.at(-1)).toHaveLength(200);
+    expect(stored.join("\n")).toMatch(/boom/i);
+  });
+
+  test("detail view shows stderr diagnostics for failed runs only", () => {
+    const selection = new SelectionModel([
+      { id: "demo", name: "Demo", file: "demo.py", stage: "s", description: "d", provider: "test" },
+    ]);
+    const failed = blankRunState();
+    failed.byScreener["demo"] = { status: "failed", exitCode: 1, log: ["out"], stderr: ["Traceback: boom"] };
+    const failedText = detailText(selection, failed, true);
+    expect(failedText).toMatch(/Diagnostics \(stderr\):/);
+    expect(failedText).toMatch(/boom/);
+
+    const ok = blankRunState();
+    ok.byScreener["demo"] = { status: "ok", exitCode: 0, log: ["out"], stderr: ["some warning"] };
+    expect(detailText(selection, ok, true)).not.toMatch(/Diagnostics \(stderr\):/);
   });
 });
