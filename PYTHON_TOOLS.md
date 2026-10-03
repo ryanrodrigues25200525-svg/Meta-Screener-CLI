@@ -1,7 +1,7 @@
 # Python tools catalog
 
-88 tracked Python files: 1 runner, 17 registered workflow scripts, 53
-supporting tools, 1 MCP server, 6 tests, and 10 archived one-off migrations.
+89 tracked Python files: 1 runner, 17 registered workflow scripts, 53
+supporting tools, 1 MCP server, 7 tests, and 10 archived one-off migrations.
 Descriptions below come from each module's own docstring. The 17 registered
 workflows are the only scripts the CLI runs; everything else is a supporting
 tool, test, or archived history.
@@ -122,6 +122,7 @@ tool, test, or archived history.
 - [`tests/test_meta_screen_checks.py`](tests/test_meta_screen_checks.py) — custom meta-screen check selection and ranked-result export.
 - [`tests/test_ranked_results.py`](tests/test_ranked_results.py) — JSON ranking adapters for rotation, short-interest, and dividend workflows.
 - [`tests/test_screener_mcp.py`](tests/test_screener_mcp.py) — MCP tool validation and registry operations with isolated registries.
+- [`tests/test_screener_mcp_stdio.py`](tests/test_screener_mcp_stdio.py) — end-to-end MCP stdio integration: launches the real server in a subprocess, drives it with the SDK client, and runs two non-Yahoo stub workflows under a temporary `FINANCE_AI_HOME`.
 
 ## Archive — one-off migrations (not runnable screens)
 
