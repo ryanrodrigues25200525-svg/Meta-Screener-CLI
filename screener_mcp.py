@@ -281,6 +281,7 @@ def _plan_screeners(root: Path, screener_ids: Any) -> dict[str, Any]:
     registry = read_registry(root)
     ids = _normalize_ids(registry, screener_ids)
     ordered = _order_by_stage(registry, ids)
+    ordered_ids = [item["id"] for item in ordered]
     plan = []
     for item in ordered:
         plan.append(
@@ -297,8 +298,8 @@ def _plan_screeners(root: Path, screener_ids: Any) -> dict[str, Any]:
         )
     return {
         "screeners": ids,
-        "ordered_ids": [item["id"] for item in ordered],
-        "command": _build_run_command(root, ids),
+        "ordered_ids": ordered_ids,
+        "command": _build_run_command(root, ordered_ids),
         "plan": plan,
     }
 

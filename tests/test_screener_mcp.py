@@ -139,6 +139,16 @@ class ListAndPlanTests(RegistryTestCase):
         self.assertEqual(result["command"][2:4], ["run", "--json-events"])
         self.assertEqual(result["command"].count("--screener"), 2)
 
+    def test_plan_command_matches_stage_order(self) -> None:
+        result = screener_mcp._plan_screeners(self.root, ["second-screen", "meta-overlap"])
+        command_ids = [
+            result["command"][index + 1]
+            for index, token in enumerate(result["command"])
+            if token == "--screener"
+        ]
+        self.assertEqual(result["ordered_ids"], ["meta-overlap", "second-screen"])
+        self.assertEqual(command_ids, result["ordered_ids"])
+
     def test_plan_rejects_unknown_screener(self) -> None:
         with self.assertRaises(ValueError):
             screener_mcp._plan_screeners(self.root, ["does-not-exist"])
