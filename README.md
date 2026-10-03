@@ -1,84 +1,77 @@
-# Meta Screener CLI
+# 📊 Meta Screener CLI
 
-**Find stocks worth a closer look without running scripts one by one.** This repository contains the 47-check cross-signal meta-screen plus the broader Python screeners, research workflows, and Finance Knowledge Graph utilities built for this workflow.
+> Run 28 Yahoo-backed **stock screeners** from one command and find the tickers that keep showing up. 🏆 Weekly, on-demand, research only — **never places trades**. 🚫💸
 
-## Install
+| 🧺 Screeners | 🛠️ Engine |
+|---|---|
+| 8 meta signal families · fundamentals · breadth · sector · volatility · sentiment · holdings · events | Sequential Yahoo runner, serial scheduler + disk cache, fail-fast rate-limit stop, JSONL events, TUI dashboard, MCP server |
 
-Requires Python 3.10 or newer. The OpenTUI dashboard also requires Bun 1.3 or newer.
+## ⚙️ Setup
+
+Requires Python 3.10+ and Bun >= 1.3 (for the dashboard).
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements-screening.txt
-python -m pip install -e .
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-screening.txt
+pip install -e .                 # gives you meta-screener + metascreener
+pip install -e '.[mcp]'          # optional: MCP server for AI agents 🤖
 (cd tui && bun install)
 ```
 
-To enable the MCP server, install its optional dependency:
+Full file catalog: [`PYTHON_TOOLS.md`](PYTHON_TOOLS.md) · dashboard details: [`tui/README.md`](tui/README.md)
+
+## 🖥️ Dashboard
 
 ```bash
-python -m pip install -e '.[mcp]'
+meta-screener          # or: metascreener
 ```
 
-The full Python-file catalog is in [`PYTHON_TOOLS.md`](PYTHON_TOOLS.md); OpenTUI setup details are in [`tui/README.md`](tui/README.md).
+Pick workflows, run them, watch ranked tickers stream in — plus a 🏆 leaderboard panel showing the most consistent names across your run.
 
-## Run the dashboard
+`↑/↓·j/k` move · `space` select · `a` all · `r` run · `R` run-all · `d` details · `q` quit
+
+## 🚀 Run
 
 ```bash
-metascreener
+meta-screener list                        # all 28 screeners
+meta-screener list --checks               # the 47 meta checks
+meta-screener plan --all                  # preview, runs nothing
+meta-screener run --screener altman-z     # one screener
+meta-screener run --stage company-signals # one group
+meta-screener run --all --continue-on-error  # weekly sweep 🧹
+meta-screener leaderboard                 # top 10 most consistent tickers 🏆
 ```
 
-`metascreener` is the no-hyphen console command. The existing `meta-screener` name remains available as an alias. Both commands open the dashboard with no subcommand and use the same direct CLI commands below.
-
-The dashboard groups the registered Yahoo-only workflows by stage, lets you select one or more, and runs them sequentially. It shows ticker rankings only for stock screens that produce a validated ranked list; context and event screens show their status and available summary instead. A failed workflow shows a bounded stderr diagnostics tail in its detail view.
-
-Keyboard controls: arrows or `j/k` move, `space` selects, `a` selects all defaults, `c` clears, `r` runs selected, `R` runs all default-enabled workflows, `d` shows details, `f` toggles the opt-in daily refresh, and `q` quits.
-
-## Run directly from the CLI
+Single scripts work too:
 
 ```bash
-metascreener list
-metascreener list --checks
-metascreener plan --all
-metascreener plan --screener meta-momentum --screener fundamental-rotation
-metascreener run --screener meta-momentum
-metascreener run --all
-```
-
-`screeners.json` registers 28 Yahoo-only workflows: 8 meta family screens, 5 company screens (smart-money, insider-activity, altman-z, cash-return, dividend-growth), and the rest. Twenty-seven run with `--all`; `screen-history` is an optional outcome tracker. `metascreener leaderboard` lists the top 10 tickers most consistent across saved screener results. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
-
-## Yahoo Finance pacing
-
-All 28 registered workflows are Yahoo-only (`"yahoo": true` in `screeners.json`) and share one serial scheduler with an on-disk cache (`yahoo_client.py`). Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
-
-Company and event screens accept an explicit ticker list when invoked directly, or fall back to the shared built-in universe:
-
-```bash
-metascreener run --screener analyst-consensus
-python3 short_interest.py --tickers AAPL,MSFT
+python3 altman_z.py --tickers AAPL,MSFT
 python3 catalyst_scan.py --tickers NVDA,AVGO
 ```
 
-The static `macro-calendar` workflow is retired: Yahoo supplies no macro calendar, so the approximate recurring schedule was removed from the registry rather than kept as fake FOMC/CPI dates. The script is preserved for reference at `archive/econ_calendar.py`; confirm macro dates with official sources (FRED API, central-bank calendars).
+27 run with `--all`; `screen-history` is opt-in only.
 
-## MCP for local AI agents
+## 📚 The lineup
 
-After installing the optional MCP extra, configure your MCP client to launch `meta-screener-mcp` over stdio. The server can list workflows and checks, preview plans, run one or more workflows, create a named screen from existing checks, register an existing Python workflow inside this repository, and unregister a workflow. Unregistering keeps the source file; MCP tools do not write arbitrary Python source. Full setup, tool table, and examples: [`docs/MCP.md`](docs/MCP.md).
+- 🔍 **Meta signal families** — `meta-momentum · technical · valuation · fundamental · theme · insider · earnings · quality` (47 checks, split up so each runs fast)
+- 💰 **Company signals** — `analyst-consensus · short-interest · dividend-analysis · options-activity · smart-money · insider-activity · altman-z · cash-return · dividend-growth`
+- 🌍 **Market context** — `sector-rotation · market-breadth · volatility-regime · market-sentiment · commodities-fx · cot-futures-proxy`
+- 📅 **Events & tracking** — `catalyst-calendar · research-frontier · screen-history`
 
-Example MCP client entry:
+`meta-screener leaderboard` tallies every ranked top after a run and lists the 10 tickers that show up most. That's the whole game: **run weekly, buy nothing on the screen alone — dive deeper into the repeat names.** 🔎
 
-```json
-{
-  "mcpServers": {
-    "meta-screener": {
-      "command": "/path/to/venv/bin/meta-screener-mcp"
-    }
-  }
-}
+## 🐢 Yahoo pacing
+
+One serial scheduler + on-disk cache for everything (`yahoo_client.py`). Sequential runs, one worker, batches of 8, 15s cooldowns (tunable 10–30s). Yahoo rate limit → run stops, no retry, no fake data — blanks stay blank. 📭
+
+## 🤖 MCP for agents
+
+```bash
+opencode mcp add meta-screener -- /path/to/repo/.venv/bin/meta-screener-mcp
 ```
 
-## Local data and limits
+7 tools: `list_screeners · list_checks · plan_screeners · run_screeners · create_screener · register_screener · remove_screener`. Full table + examples: [`docs/MCP.md`](docs/MCP.md).
 
-The public repository does not include portfolio positions, private watchlists, credentials, or generated research history. Personal files such as `pm_portfolio.json`, `positions.json`, and `universe.csv` stay local and are ignored by Git. MCP and TUI run the same Python CLI so they follow its registry, run order, and rate-limit handling.
+## 🔒 Notes & limits
 
-A screen pass is a research lead, not an investment decision. The CLI does not place orders. This project is separate from [Trading CLI](https://github.com/ryanrodrigues25200525-svg/Trading-CLI), which is for paper-trading workflows.
+No portfolio positions, credentials, or private notes in this repo — they stay local and gitignored. Screens are research leads, not investment decisions. Paper-trading lives next door at [Trading CLI](https://github.com/ryanrodrigues25200525-svg/Trading-CLI). 📈
