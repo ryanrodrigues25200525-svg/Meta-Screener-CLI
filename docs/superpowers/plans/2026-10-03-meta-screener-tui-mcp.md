@@ -35,12 +35,12 @@
 
 ### Task 1 — Curate and document the Python repository
 
-**Owner:** OpenCode Go Muse Spark 1.3 Contributor. Limit changes to `PYTHON_TOOLS.md`, the listed archive moves and archive README, missing module docstrings, `README.md`, `CHANGELOG.md`, `VERSION`, and `.gitignore`. Do not modify runner, MCP, TUI, or `pyproject.toml` implementation files.
+**Owner:** OpenCode Go Muse Spark 1.3 Contributor. Limit changes to `PYTHON_TOOLS.md`, the listed archive moves and archive README, missing module docstrings, `README.md`, `CHANGELOG.md`, and `VERSION`. Do not modify runner, MCP, TUI, `.gitignore`, or `pyproject.toml` implementation files.
 
 - [ ] Build a concise catalog from actual module docstrings and classify every tracked Python file by purpose.
 - [ ] Move only the ten one-off migration/backfill scripts named in the spec into the dated archive; preserve their source and document that they are not normal runnable screens.
 - [ ] Add docstrings to `corr_regime.py`, `daily_gaps.py`, and `verify_3m.py` without changing their behavior.
-- [ ] Add changelog entries for the 0.3.0 work and set `VERSION` to `0.3.0`; leave `pyproject.toml` to the integration task.
+- [ ] Create a `CHANGELOG.md` with a provisional `[Unreleased]` section for the planned work and set `VERSION` to `0.3.0`; leave release-date/finalized entries and `pyproject.toml` to the integration task.
 - [ ] Link the catalog and clarify the 17 registered workflows and default-enabled subset in the README.
 - [ ] Review only this task's diff for accurate descriptions, unintended content changes, and stray data files.
 
@@ -53,9 +53,9 @@
 - [ ] Write failing `unittest` cases for selection, event shape, result persistence, and no-argument TUI launch dispatch.
 - [ ] Define JSON Lines stdout events: `run_started`, `screener_started`, `output_line`, `screener_finished`, `run_finished`, and `error`. Every event includes `run_id`; screener events include `screener_id`. Finish events include status and exit code; successful result events may include `summary`, `report_path`, and `top` rows shaped as `{rank,ticker,name,detail}`.
 - [ ] Implement `run --json-events` so stdout contains only JSON Lines, child output is forwarded as `output_line`, and ordinary CLI text behavior remains unchanged without the flag. Allow repeated `--screener ID` arguments to run an explicit list sequentially while preserving existing single-ID usage.
-- [ ] Store the final run record under `.meta-screener/runs/<run_id>.json`; use atomic writes and retain only a bounded recent history.
+- [ ] Store the final run record under `.meta-screener/runs/<run_id>.json`; use atomic writes and retain at most the 30 most recent records.
 - [ ] Extract ranked rows from the real `meta-overlap` result and the existing structured fundamental-rotation output. Pass the rotation CSV path under the per-run `.meta-screener/` directory. Other workflows report summaries/paths without fabricated stock ranks.
-- [ ] Support validated custom check subsets in `meta_screen.py` and the registry while preserving the existing full 47-check default.
+- [ ] Support validated custom check subsets in `meta_screen.py` and the registry while preserving the existing full 47-check default. Store selected names as repeated `--check <name>` values in a custom entry's `args`; `meta_screen.py` accepts repeated `--check` values.
 - [ ] Make no-argument `meta-screener` launch `bun run` in `tui/`, pass the active Python executable, and provide a clear missing-Bun/dependency message. Keep `list`, `plan`, and `run` usable without Bun.
 - [ ] Run the focused Python tests and inspect normal and JSON event output.
 
@@ -89,7 +89,8 @@
 
 - [ ] Review every subagent diff for spec compliance, unrelated changes, registry safety, terminal cleanup, and dependency lock integrity; request focused fixes if needed.
 - [ ] Run the complete Python and Bun test suites, static checks, package metadata checks, and `git diff --check`.
-- [ ] Add the optional `mcp>=2,<3` extra and `meta-screener-mcp` entry point in `pyproject.toml`; align project metadata at `0.3.0`.
+- [ ] Add the optional `mcp>=2,<3` extra and `meta-screener-mcp` entry point in `pyproject.toml`; align project metadata at `0.3.0`. Add `.meta-screener/` and `.DS_Store` ignore rules in `.gitignore`.
+- [ ] Finalize the changelog entry and catalog any new tracked Python files added by the runner, MCP server, and tests.
 - [ ] Run the real default-universe `meta-overlap` workflow from the TUI through JSON Lines with one worker, batch size 25, and a 10-second inter-batch pause. Set `FINANCE_KG_ROOT` to a temporary directory; capture the actual ticker ranking, check it matches the saved JSON result, and stop immediately if Yahoo returns a rate limit.
 - [ ] Launch MCP over stdio and confirm the tool list and registry operations work against an isolated copy of `screeners.json`.
 - [ ] Inspect final TUI behavior at normal and narrow widths, status/error handling, terminal cleanup, docs, changelog, version files, and final Git diff.
