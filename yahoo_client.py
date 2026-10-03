@@ -112,6 +112,12 @@ def _default_provider(ticker: str, op: str = "info", **kwargs: Any) -> Any:
             calls = chain.get("calls", calls)
             puts = chain.get("puts", puts)
         return {"calls": calls, "puts": puts}
+    if op == "holders":
+        return stock.institutional_holders
+    if op == "insider":
+        return stock.insider_transactions
+    if op == "dividends":
+        return stock.dividends
     raise ValueError(f"Unknown Yahoo op: {op}")
 
 
@@ -166,6 +172,18 @@ class YahooClient:
     def get_option_chain(self, ticker: str, expiry: Any = None) -> dict:
         """Option chain for one ticker/expiry as ``{"calls": df, "puts": df}``."""
         return self._fetch("option_chain", ticker, expiry=expiry)
+
+    def get_holders(self, ticker: str) -> Any:
+        """Institutional holders table for one ticker (possibly empty)."""
+        return self._fetch("holders", ticker)
+
+    def get_insider(self, ticker: str) -> Any:
+        """Insider transactions table for one ticker (possibly empty)."""
+        return self._fetch("insider", ticker)
+
+    def get_dividends(self, ticker: str) -> Any:
+        """Dividend payout history for one ticker (possibly empty)."""
+        return self._fetch("dividends", ticker)
 
     # -- internals -----------------------------------------------------
     def _fetch(self, op: str, ticker: str, **kwargs: Any) -> Any:
@@ -270,3 +288,15 @@ def get_options(ticker: str) -> list:
 
 def get_option_chain(ticker: str, expiry: Any = None) -> dict:
     return _shared_client().get_option_chain(ticker, expiry=expiry)
+
+
+def get_holders(ticker: str) -> Any:
+    return _shared_client().get_holders(ticker)
+
+
+def get_insider(ticker: str) -> Any:
+    return _shared_client().get_insider(ticker)
+
+
+def get_dividends(ticker: str) -> Any:
+    return _shared_client().get_dividends(ticker)

@@ -171,7 +171,7 @@ Removing the registration keeps the `.py` file.
 
 ## Providers and registry (v0.4.0)
 
-All 24 registry entries are Yahoo-only (`"yahoo": true`,
+All 29 registry entries are Yahoo-only (`"yahoo": true`,
 `"provider": "Yahoo Finance via yfinance"`). Company and event screens take an
 explicit `--tickers` list or the shared built-in universe when run directly;
 `run_screeners` launches them with their registry `args` only. The static

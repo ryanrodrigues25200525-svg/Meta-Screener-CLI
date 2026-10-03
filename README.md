@@ -45,11 +45,11 @@ metascreener run --screener meta-overlap
 metascreener run --all
 ```
 
-`screeners.json` registers 24 Yahoo-only workflows: `meta-overlap` plus 8 family splits (momentum, technical, valuation, fundamental, theme, insider, earnings, quality). Twenty-three run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
+`screeners.json` registers 29 Yahoo-only workflows: `meta-overlap`, 8 family splits, and 5 company screens (smart-money, insider-activity, altman-z, cash-return, dividend-growth). Twenty-eight run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
 
 ## Yahoo Finance pacing
 
-All 24 registered workflows are Yahoo-only (`"yahoo": true` in `screeners.json`) and share one serial scheduler with an on-disk cache (`yahoo_client.py`). Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
+All 29 registered workflows are Yahoo-only (`"yahoo": true` in `screeners.json`) and share one serial scheduler with an on-disk cache (`yahoo_client.py`). Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
 
 Company and event screens accept an explicit ticker list when invoked directly, or fall back to the shared built-in universe:
 

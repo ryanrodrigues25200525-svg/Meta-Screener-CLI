@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "stages": [
     {
       "id": "discovery",
@@ -589,6 +589,116 @@
       ],
       "writes": [
         "reports/<date> Unusual-Options.md (local run-record note; SCREEN_NOTES_DIR overrides)"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "smart-money",
+      "name": "Smart Money Tracker",
+      "file": "smart_money.py",
+      "stage": "company-signals",
+      "description": "Ranks institutional ownership share from Yahoo holder tables; blanks when Yahoo has no holder data.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance per-ticker data via yahoo_client; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "reports/Smart Money Tracker.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "insider-activity",
+      "name": "Insider Activity",
+      "file": "insider_activity.py",
+      "stage": "company-signals",
+      "description": "Counts insider buyers vs sellers from Yahoo transactions; cluster buys rank first, blanks on no data.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance per-ticker data via yahoo_client; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "reports/Insider Activity.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "altman-z",
+      "name": "Altman-Z Safety",
+      "file": "altman_z.py",
+      "stage": "company-signals",
+      "description": "Ranks Altman Z-scores from Yahoo statements; safe/grey/distress zones, blanks on missing inputs.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance per-ticker data via yahoo_client; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "reports/Altman-Z Safety.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "cash-return",
+      "name": "Cash Return",
+      "file": "cash_return.py",
+      "stage": "company-signals",
+      "description": "Ranks FCF yield with buyback yield from Yahoo cashflow; blanks when cashflow or market cap is missing.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance per-ticker data via yahoo_client; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "reports/Cash Return.md"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "dividend-growth",
+      "name": "Dividend Growth",
+      "file": "dividend_growth.py",
+      "stage": "company-signals",
+      "description": "Ranks consecutive annual payout increases from Yahoo dividend history; blanks on no history.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance per-ticker data via yahoo_client; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "reports/Dividend Growth.md"
       ],
       "default_enabled": true,
       "args": []

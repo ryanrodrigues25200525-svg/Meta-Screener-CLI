@@ -70,6 +70,22 @@ class TestYahooClient(unittest.TestCase):
             finally:
                 pickle.load = real_load
 
+    def test_new_ops_stop_on_rate_limit_without_retry(self):
+        import yahoo_client
+
+        with tempfile.TemporaryDirectory() as tmp:
+            calls: list[str] = []
+
+            def fake_fetch(ticker, **kw):
+                calls.append(ticker)
+                raise Exception("YFRateLimitError: Too Many Requests")
+
+            client = yahoo_client.YahooClient(provider=fake_fetch, cache_dir=Path(tmp))
+            for method in ("get_holders", "get_insider", "get_dividends"):
+                with self.assertRaises(RuntimeError, msg=method):
+                    getattr(client, method)("AAPL")
+            self.assertEqual(len(calls), 3)
+
     def test_shared_client_serializes_and_stops_on_rate_limit(self):
         from yahoo_client import YahooClient
 
