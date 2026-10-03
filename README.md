@@ -1,52 +1,74 @@
-# Meta Screener CLI 🔎
+# Meta Screener CLI
 
-**Find stocks worth a closer look—without running scripts one by one.**
+**Find stocks worth a closer look without running scripts one by one.** This repository contains the 47-check cross-signal meta-screen plus the broader Python screeners, research workflows, and Finance Knowledge Graph utilities built for this workflow.
 
-Type `meta-screener` to run the core screen. It checks a demo universe, ranks companies by overlap across 47 signals, and prints the leading names. The repo also includes 82 Python tools from the wider Finance AI workflow.
+## Install
 
-## 🚀 Install
-
-Requires Python 3.10 or newer.
+Requires Python 3.10 or newer. The OpenTUI dashboard also requires Bun 1.3 or newer.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-screening.txt
 python -m pip install -e .
+(cd tui && bun install)
 ```
 
-## ▶️ Run
+To enable the MCP server, install its optional dependency:
 
 ```bash
-meta-screener
+python -m pip install -e '.[mcp]'
 ```
 
-To explore or run more screens:
+The full Python-file catalog is in [`PYTHON_TOOLS.md`](PYTHON_TOOLS.md); OpenTUI setup details are in [`tui/README.md`](tui/README.md).
+
+## Run the dashboard
 
 ```bash
-meta-screener list
-meta-screener list --checks
-meta-screener plan --all
-meta-screener run --stage discovery
-meta-screener run --all
+metascreener
 ```
 
-`run --all` runs the 16 screens registered in `screeners.json`. The other Python files are supporting tools; they do not run automatically.
+`metascreener` is the no-hyphen console command. The existing `meta-screener` name remains available as an alias. Both commands open the dashboard with no subcommand and use the same direct CLI commands below.
 
-## 📊 What the core screen checks
+The dashboard groups the registered workflows by stage, lets you select one or more, and runs them sequentially. It shows ticker rankings only for workflows that produce a ranked stock list; context, calendar, and research workflows show their status and available summary instead.
 
-The 47 checks look at price momentum, technical signals, valuation, business fundamentals, themes, insider activity, earnings, and company quality. The ranking favors breadth across signal families. Related checks are not treated as separate confirmations, and missing data is shown as unavailable.
+Keyboard controls: arrows or `j/k` move, `space` selects, `a` selects all defaults, `c` clears, `r` runs selected, `R` runs all default-enabled workflows, `d` shows details, `f` toggles the opt-in daily refresh, and `q` quits.
 
-## 🛡️ Yahoo Finance pacing
+## Run directly from the CLI
 
-The core screen uses one worker and batches up to 25 symbols, with a 10-second pause between full batches. A 100-company run has about 30 seconds of planned cooldown, plus network time. If Yahoo returns a rate-limit error, the CLI stops and does not retry automatically.
+```bash
+metascreener list
+metascreener list --checks
+metascreener plan --all
+metascreener plan --screener meta-overlap --screener fundamental-rotation
+metascreener run --screener meta-overlap
+metascreener run --all
+```
 
-## 🗂️ Local data
+`screeners.json` registers 17 workflows. Sixteen run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
 
-The public repo does not include portfolio positions, private watchlists, credentials, or generated research history. Personal files such as `pm_portfolio.json`, `positions.json`, and `universe.csv` stay local and are ignored by Git.
+## Yahoo Finance pacing
 
-The core screen writes a dated note to your Finance Knowledge Graph and updates local screen history. Use `meta-screener plan --all` to preview the wider run before launching it. Some of the 82 supporting scripts need additional local data or tools.
+Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
 
-A screen pass is a research lead, not an investment decision. The CLI does not place orders.
+## MCP for local AI agents
 
-This is separate from [Trading CLI](https://github.com/ryanrodrigues25200525-svg/Trading-CLI), which is for paper-trading workflows.
+After installing the optional MCP extra, configure your MCP client to launch `meta-screener-mcp` over stdio. The server can list workflows and checks, preview plans, run one or more workflows, create a named screen from existing checks, register an existing Python workflow inside this repository, and unregister a workflow. Unregistering keeps the source file; MCP tools do not write arbitrary Python source. Full setup, tool table, and examples: [`docs/MCP.md`](docs/MCP.md).
+
+Example MCP client entry:
+
+```json
+{
+  "mcpServers": {
+    "meta-screener": {
+      "command": "/path/to/venv/bin/meta-screener-mcp"
+    }
+  }
+}
+```
+
+## Local data and limits
+
+The public repository does not include portfolio positions, private watchlists, credentials, or generated research history. Personal files such as `pm_portfolio.json`, `positions.json`, and `universe.csv` stay local and are ignored by Git. MCP and TUI run the same Python CLI so they follow its registry, run order, and rate-limit handling.
+
+A screen pass is a research lead, not an investment decision. The CLI does not place orders. This project is separate from [Trading CLI](https://github.com/ryanrodrigues25200525-svg/Trading-CLI), which is for paper-trading workflows.

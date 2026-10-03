@@ -3,6 +3,8 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+node_modules/
+.DS_Store
 
 # Credentials and local/private research data
 .env
@@ -33,3 +35,7 @@ Finance Knowledge Graph/
 *.csv
 *.json
 !screeners.json
+!tui/package.json
+!tui/tsconfig.json
+.meta-screener/
+.superpowers/

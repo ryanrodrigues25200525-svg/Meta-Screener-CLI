@@ -1,0 +1,19 @@
+{
+  "name": "meta-screener-tui",
+  "version": "0.3.0",
+  "type": "module",
+  "description": "OpenTUI dashboard for the Meta Screener CLI JSONL runner.",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "snapshot": "bun src/index.ts --snapshot",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opentui/core": "^0.5.14"
+  },
+  "devDependencies": {
+    "bun-types": "^1.4.2",
+    "typescript": "^7.0.2"
+  }
+}

@@ -20,7 +20,7 @@ Usage:
   python3 rotation_screen.py --tickers MU,NVDA    # subset
   python3 rotation_screen.py --fx DKK=0.1570
 """
-import argparse, csv, glob, json, os, re, statistics, sys
+import argparse, csv, glob, json, os, re, statistics, sys, tempfile
 
 VAULT = next(c for c in (os.environ.get("KG_VAULT"), "/documents/Finance Knowledge Graph",
                          os.path.expanduser("~/Documents/Finance Knowledge Graph"))
@@ -131,11 +131,50 @@ def pct(x):
     return "n/a" if x is None else f"{x * 100:+.1f}%"
 
 
+def build_result_payload(candidates, csv_path):
+    top = []
+    for rank, row in enumerate(sorted(candidates, key=lambda item: -item["qoq_last"])[:10], 1):
+        top.append({
+            "rank": rank,
+            "ticker": row["ticker"],
+            "name": row.get("name") or row["ticker"],
+            "detail": (
+                f"QoQ revenue {pct(row['qoq_last'])}; "
+                f"operating margin {row.get('om_last', 0) * 100:.1f}%; "
+                f"P/S {row['ps_ttm']:.2f}x"
+            ),
+        })
+    return {
+        "summary": f"{len(top)} companies passed the growth, margin, and valuation screen",
+        "report_path": str(csv_path),
+        "top": top,
+    }
+
+
+def write_result_json(path, payload):
+    absolute_path = os.path.abspath(path)
+    os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=os.path.dirname(absolute_path),
+            prefix=".rotation-screen-", suffix=".tmp", delete=False,
+        ) as handle:
+            temporary_path = handle.name
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        os.replace(temporary_path, absolute_path)
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.unlink(temporary_path)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tickers")
     ap.add_argument("--fx", action="append", default=[], help="CUR=rate_in_usd, e.g. DKK=0.1570")
     ap.add_argument("--csv-out", default=os.path.join(WORK, "rotation_screen.csv"))
+    ap.add_argument("--result-json", help="write the ranked shortlist for the CLI dashboard")
     a = ap.parse_args()
     fx = {}
     for item in a.fx:
@@ -277,6 +316,8 @@ def main():
     if not unvalued:
         print("   none")
     print(f"\nrows: {len(rows)}   csv: {a.csv_out}")
+    if a.result_json:
+        write_result_json(a.result_json, build_result_payload(cand, os.path.abspath(a.csv_out)))
 
 
 if __name__ == "__main__":
