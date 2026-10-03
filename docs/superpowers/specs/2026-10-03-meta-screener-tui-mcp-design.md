@@ -28,7 +28,7 @@ Make the repository an understandable home for the existing Python screeners and
 - Preserve explicit `list`, `plan`, and `run` subcommands. A bare `meta-screener` starts the dashboard; `meta-screener run --screener meta-overlap` remains the direct core-screen command.
 - Add an opt-in JSON Lines event mode for run start, workflow start/output/finish, and overall finish. The dashboard will consume this contract instead of scraping terminal formatting.
 - Save compact run summaries and known structured rankings under an ignored `.meta-screener/` directory. Keep generated files out of Git and outside the user's Finance Knowledge Graph during validation.
-- Start with stable result adapters for the core meta-screen and workflows that already expose a machine-readable ranking. For workflows with no stock ranking, show their status, useful summary, and report location.
+- Add stable result adapters for the core meta-screen, fundamental rotation, short-interest, and dividend workflows; each already ranks names in its current output. For workflows with no stock ranking, show their status, useful summary, and report location.
 - Run multiple selected workflows sequentially. Do not overlap runs. Reuse the runner's cooldown and rate-limit stop behavior.
 
 ### OpenTUI dashboard

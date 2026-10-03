@@ -25,6 +25,7 @@
 
 - `meta_screener_cli.py`: validate and select registered workflows, launch the dashboard with no arguments, preserve direct subcommands, emit structured run events, sequence child processes, and persist run summaries.
 - `meta_screen.py`: accept a validated subset of built-in check names for named custom screen profiles and expose a stable top-ranking result for the runner.
+- `rotation_screen.py`, `short_interest.py`, and `dividend_analysis.py`: expose their existing ranked output as optional JSON result rows without changing their legacy reports.
 - `kg_links.py`: make `load_ticker_map(root=...)` resolve Company notes from the supplied root so `FINANCE_KG_ROOT` works for isolated runs.
 - `screeners.json`: remain the versioned source of registered workflow metadata; validate built-in and custom entries.
 - `screener_mcp.py`: expose the shared runner and safe registry operations over local stdio MCP.
@@ -51,11 +52,11 @@
 
 **Owner:** Root agent. Depends on the interface below; do not touch catalog/archive files assigned to Task 1.
 
-- [ ] Write failing `unittest` cases for selection, event shape, result persistence, no-argument TUI launch dispatch, and ticker-map root isolation.
+- [ ] Write failing `unittest` cases for selection, event shape, result persistence, no-argument TUI launch dispatch, ticker-map root isolation, and ranked-result validation.
 - [ ] Define JSON Lines stdout events: `run_started`, `screener_started`, `output_line`, `screener_finished`, `run_finished`, and `error`. Every event includes `run_id`; screener events include `screener_id`. Finish events include status and exit code; successful result events may include `summary`, `report_path`, and `top` rows shaped as `{rank,ticker,name,detail}`.
 - [ ] Implement `run --json-events` so stdout contains only JSON Lines, child output is forwarded as `output_line`, and ordinary CLI text behavior remains unchanged without the flag. Allow repeated `--screener ID` arguments to run an explicit list sequentially while preserving existing single-ID usage.
 - [ ] Store the final run record under `.meta-screener/runs/<run_id>.json`; use atomic writes and retain at most the 30 most recent records.
-- [ ] Extract ranked rows from the real `meta-overlap` result and the existing structured fundamental-rotation output. Pass the rotation CSV path under the per-run `.meta-screener/` directory. Other workflows report summaries/paths without fabricated stock ranks.
+- [ ] Extract ranked rows from meta-overlap, fundamental rotation, short interest, and dividend analysis. Add opt-in `--result-json` output to the latter three without changing their existing text/Markdown reports. Pass the rotation CSV path under the per-run `.meta-screener/` directory. Other workflows report summaries/paths without fabricated stock ranks.
 - [ ] Support validated custom check subsets in `meta_screen.py` and the registry while preserving the existing full 47-check default. Store selected names as repeated `--check <name>` values in a custom entry's `args`; `meta_screen.py` accepts repeated `--check` values.
 - [ ] Pass `FINANCE_KG_ROOT` through the meta-screen ticker-map lookup so temporary validation does not read the user's real vault.
 - [ ] Make no-argument `meta-screener` launch `bun run` in `tui/`, pass the active Python executable, and provide a clear missing-Bun/dependency message. Keep `list`, `plan`, and `run` usable without Bun.
