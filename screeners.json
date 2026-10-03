@@ -1,5 +1,5 @@
 {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "stages": [
     {
       "id": "discovery",
@@ -73,29 +73,6 @@
       ],
       "writes": [
         "growth_momentum.csv"
-      ],
-      "default_enabled": true,
-      "args": []
-    },
-    {
-      "id": "meta-overlap",
-      "name": "Meta Screen: Cross-Signal Breadth",
-      "file": "meta_screen.py",
-      "stage": "meta-signals",
-      "description": "Runs the 47 registered checks across price action, valuation, business quality, earnings, insider activity, and themes. Ranks family breadth and raw hit counts separately.",
-      "provider": "Yahoo Finance via yfinance",
-      "yahoo": true,
-      "requirements": [
-        "yfinance",
-        "pandas",
-        "numpy"
-      ],
-      "reads": [
-        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
-      ],
-      "writes": [
-        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
-        "rotation_history.csv"
       ],
       "default_enabled": true,
       "args": []

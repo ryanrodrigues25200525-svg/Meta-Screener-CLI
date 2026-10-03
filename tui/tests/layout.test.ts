@@ -31,7 +31,7 @@ describe("narrow-terminal state/layout", () => {
     expect(normal).toContain("## Candidate discovery");
     expect(normal).toContain("↑/↓ move");
     expect(narrow).not.toContain("## Candidate discovery");
-    expect(narrow).toContain("focus 1/29");
+    expect(narrow).toContain("focus 1/28");
     for (const line of narrow.split("\n")) {
       expect(line.length).toBeLessThanOrEqual(60);
     }
@@ -41,7 +41,7 @@ describe("narrow-terminal state/layout", () => {
     const selection = SelectionModel.fromRegistry(registry);
     const run = blankRunState();
     const groups = groupByStage(registry);
-    expect(navText(selection, run, groups)).toContain("meta-overlap");
+    expect(navText(selection, run, groups)).toContain("meta-momentum");
     expect(detailText(selection, run, false)).toContain(selection.focused()?.name ?? "");
     expect(statusText(selection, run, { enabled: false, lastRunAt: null })).toContain("selected 1");
   });

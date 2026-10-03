@@ -552,6 +552,11 @@ def run_json_command(registry: dict[str, Any], args: argparse.Namespace) -> int:
         overall_status = "failed"
         exit_code = 1
     emit({
+        "type": "leaderboard",
+        "top": [{"ticker": t, "appearances": a, "best_rank": b}
+                for t, a, b in compute_leaderboard(result_dir, 10)],
+    })
+    emit({
         "type": "run_finished",
         "status": overall_status,
         "exit_code": exit_code,
@@ -608,7 +613,66 @@ def run_command(registry: dict[str, Any], args: argparse.Namespace) -> int:
     print("\n=== Run summary ===")
     for screener_id, status in statuses:
         print(f"{screener_id:<24} {status}")
+    print("\nRun `metascreener leaderboard` for the cross-screener top 10.")
     return 0 if all(status == "ok" for _, status in statuses) else 1
+
+
+def compute_leaderboard(result_dir: Path, top_n: int = 10) -> list[tuple]:
+    """Rank tickers by appearances across saved result tops.
+
+    Only measured rows count: rows whose detail starts with "blank" are
+    not signals. Ties break on best rank, then ticker. Returns
+    ``[(ticker, appearances, best_rank), ...]``.
+    """
+    counts: dict[str, list] = {}
+    try:
+        files = sorted(Path(result_dir).glob("*.json"))
+    except OSError:
+        return []
+    for path in files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        for row in payload.get("top") or []:
+            if not isinstance(row, dict) or not isinstance(row.get("ticker"), str):
+                continue
+            if str(row.get("detail") or "").startswith("blank"):
+                continue
+            rank = row.get("rank")
+            entry = counts.setdefault(row["ticker"], [0, 10 ** 9])
+            entry[0] += 1
+            if type(rank) is int and rank < entry[1]:
+                entry[1] = rank
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1][0], kv[1][1], kv[0]))
+    return [(ticker, apps, best) for ticker, (apps, best) in ranked[:top_n]]
+
+
+def leaderboard_command(args: argparse.Namespace) -> int:
+    if args.run_id:
+        result_dir = RUNS_DIR / args.run_id
+        board = compute_leaderboard(result_dir, args.top)
+    else:
+        try:
+            runs = sorted(RUNS_DIR.glob("*.json"),
+                          key=lambda item: item.stat().st_mtime_ns, reverse=True)
+        except OSError:
+            runs = []
+        board = []
+        for record_path in runs:
+            board = compute_leaderboard(RUNS_DIR / record_path.stem, args.top)
+            if board:
+                break
+    if not board:
+        print("No ranked screener results found yet; run some screeners first.",
+              file=sys.stderr)
+        return 1
+    print("=== Leaderboard: most consistent across screeners ===")
+    for rank, (ticker, apps, best) in enumerate(board, 1):
+        print(f"#{rank:<3} {ticker:<6} {apps}x (best #{best})")
+    return 0
 
 
 def add_selection_arguments(parser: argparse.ArgumentParser) -> None:
@@ -646,6 +710,12 @@ def build_parser() -> argparse.ArgumentParser:
                             help="emit JSON Lines run events for the TUI and MCP clients")
     run_parser.add_argument("--continue-on-error", action="store_true",
                             help="continue after ordinary failures; Yahoo rate limits always stop the run")
+
+    board_parser = subparsers.add_parser("leaderboard", help="show tickers most consistent across saved screener results")
+    board_parser.add_argument("--run-id", default=None,
+                              help="run record id; default: latest run with results")
+    board_parser.add_argument("--top", type=int, default=10,
+                              help="how many tickers to list (default: 10)")
     return parser
 
 
@@ -688,6 +758,8 @@ def main(argv: list[str] | None = None) -> int:
             return plan_command(registry, args)
         if args.command == "run":
             return run_command(registry, args)
+        if args.command == "leaderboard":
+            return leaderboard_command(args)
     except ValueError as exc:
         if getattr(args, "json_events", False):
             run_id = uuid.uuid4().hex

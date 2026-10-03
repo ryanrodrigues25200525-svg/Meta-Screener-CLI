@@ -12,14 +12,14 @@ tool, test, or archived history.
 
 ## Registered screeners (run via `metascreener`)
 
-29 workflows are registered in `screeners.json` (21 scripts; the 8 `meta-*` families share `meta_screen.py` via `--check` filters); 28 are enabled by default and
-`screen-history` is optional (excluded from the default all-run). All 29 are
+28 workflows are registered in `screeners.json` (21 scripts; the 8 `meta-*` families share `meta_screen.py` via `--check` filters); 27 are enabled by default and
+`screen-history` is optional (excluded from the default all-run). All 28 are
 Yahoo-only (`"yahoo": true`); company and event screens accept an explicit
 `--tickers` list or fall back to the shared built-in universe in
 `demo_universe.py` as selection input only. `macro-calendar` is retired (see
 `archive/econ_calendar.py`).
 
-- [`meta_screen.py`](meta_screen.py) (`meta-overlap`) — deterministic 47-check cross-signal breadth screen over a curated universe; supports named check subsets and exports its top ranking.
+- [`meta_screen.py`](meta_screen.py) (`meta-*` families) — deterministic 47-check cross-signal breadth screen over a curated universe, split into 8 family screens via named check subsets; each exports its top ranking.
 - [`rotation_screen.py`](rotation_screen.py) (`fundamental-rotation`) — ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.
 - [`growth_momentum.py`](growth_momentum.py) (`revenue-growth-momentum`) — each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.
 - [`sector_rotation.py`](sector_rotation.py) (`sector-rotation`) — sector ETF performance over short and medium horizons.

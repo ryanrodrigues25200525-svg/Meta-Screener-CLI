@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-03
+
+### Added
+
+- `metascreener leaderboard` lists the top 10 tickers most consistent
+  across saved screener results (appearances in ranked tops, blanks
+  excluded); JSON event runs also emit a `leaderboard` event for TUI/MCP.
+
+### Removed
+
+- Retired the `meta-overlap` full 47-check screen; the 8 `meta-*` family
+  screens cover the same checks in runnable pieces. Registry is now
+  28 entries (27 enabled by default).
+
 ## [0.6.0] - 2026-10-03
 
 ### Added

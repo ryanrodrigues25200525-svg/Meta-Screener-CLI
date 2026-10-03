@@ -40,16 +40,16 @@ Keyboard controls: arrows or `j/k` move, `space` selects, `a` selects all defaul
 metascreener list
 metascreener list --checks
 metascreener plan --all
-metascreener plan --screener meta-overlap --screener fundamental-rotation
-metascreener run --screener meta-overlap
+metascreener plan --screener meta-momentum --screener fundamental-rotation
+metascreener run --screener meta-momentum
 metascreener run --all
 ```
 
-`screeners.json` registers 29 Yahoo-only workflows: `meta-overlap`, 8 family splits, and 5 company screens (smart-money, insider-activity, altman-z, cash-return, dividend-growth). Twenty-eight run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
+`screeners.json` registers 28 Yahoo-only workflows: 8 meta family screens, 5 company screens (smart-money, insider-activity, altman-z, cash-return, dividend-growth), and the rest. Twenty-seven run with `--all`; `screen-history` is an optional outcome tracker. `metascreener leaderboard` lists the top 10 tickers most consistent across saved screener results. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
 
 ## Yahoo Finance pacing
 
-All 29 registered workflows are Yahoo-only (`"yahoo": true` in `screeners.json`) and share one serial scheduler with an on-disk cache (`yahoo_client.py`). Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
+All 28 registered workflows are Yahoo-only (`"yahoo": true` in `screeners.json`) and share one serial scheduler with an on-disk cache (`yahoo_client.py`). Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
 
 Company and event screens accept an explicit ticker list when invoked directly, or fall back to the shared built-in universe:
 

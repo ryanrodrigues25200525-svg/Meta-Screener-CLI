@@ -111,7 +111,7 @@ MCP tools do not write arbitrary Python source.
 ## Examples
 
 Screener IDs and stages below come from the shipped `screeners.json`
-(for example `meta-overlap`, `sector-rotation`, `catalyst-calendar`;
+(for example `meta-momentum`, `sector-rotation`, `catalyst-calendar`;
 stages `discovery`, `market-context`, `company-signals`, `events`, `tracking`).
 
 List workflows and checks:
@@ -124,14 +124,14 @@ list_checks()
 Preview before running (no execution):
 
 ```text
-plan_screeners({"screener_ids": ["meta-overlap", "fundamental-rotation"]})
+plan_screeners({"screener_ids": ["meta-momentum", "fundamental-rotation"]})
 plan_screeners({"screener_ids": ["sector-rotation", "catalyst-calendar"]})
 ```
 
 Run one or more workflows:
 
 ```text
-run_screeners({"screener_ids": ["meta-overlap"]})
+run_screeners({"screener_ids": ["meta-momentum"]})
 run_screeners({"screener_ids": ["sector-rotation", "market-sentiment"]})
 ```
 
@@ -171,7 +171,7 @@ Removing the registration keeps the `.py` file.
 
 ## Providers and registry (v0.4.0)
 
-All 29 registry entries are Yahoo-only (`"yahoo": true`,
+All 28 registry entries are Yahoo-only (`"yahoo": true`,
 `"provider": "Yahoo Finance via yfinance"`). Company and event screens take an
 explicit `--tickers` list or the shared built-in universe when run directly;
 `run_screeners` launches them with their registry `args` only. The static

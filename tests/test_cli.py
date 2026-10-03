@@ -36,12 +36,12 @@ def one_screener_registry():
 class SelectionTests(unittest.TestCase):
     def test_repeated_screener_ids_are_selected_in_registry_stage_order(self):
         args = cli.build_parser().parse_args(
-            ["run", "--screener", "sector-rotation", "--screener", "meta-overlap"]
+            ["run", "--screener", "sector-rotation", "--screener", "meta-momentum"]
         )
 
         selected = cli.select_screeners(cli.read_registry(), args)
 
-        self.assertEqual([item["id"] for item in selected], ["meta-overlap", "sector-rotation"])
+        self.assertEqual([item["id"] for item in selected], ["meta-momentum", "sector-rotation"])
 
     def test_no_arguments_launches_the_tui_instead_of_running_a_screener(self):
         with patch.object(cli, "launch_tui", create=True, return_value=0) as launch, \
@@ -156,7 +156,7 @@ class JsonEventTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertEqual(
                 [event["type"] for event in events],
-                ["run_started", "screener_started", "output_line", "screener_finished", "run_finished"],
+                ["run_started", "screener_started", "output_line", "screener_finished", "leaderboard", "run_finished"],
             )
             self.assertTrue(all(event["run_id"] == events[0]["run_id"] for event in events))
             self.assertNotIn("\nready\n", "\n" + stdout.getvalue())

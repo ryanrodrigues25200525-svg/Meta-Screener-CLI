@@ -28,7 +28,7 @@ class TestMetaFamilyScreeners(unittest.TestCase):
         stage_ids = [s["id"] for s in registry["stages"]]
         self.assertIn("meta-signals", stage_ids)
         by_id = {item["id"]: item for item in registry["screeners"]}
-        self.assertEqual(by_id["meta-overlap"]["stage"], "meta-signals")
+        self.assertNotIn("meta-overlap", by_id)
         for family_id in EXPECTED_FAMILIES:
             self.assertEqual(by_id[family_id]["stage"], "meta-signals", family_id)
 
