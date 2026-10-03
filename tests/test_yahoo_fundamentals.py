@@ -130,5 +130,67 @@ class GrowthMomentumYahooTests(unittest.TestCase):
             self.assertNotIn(banned, src)
 
 
+class ScreenUniverseTests(unittest.TestCase):
+    def test_screens_share_demo_universe(self):
+        import demo_universe
+        import growth_momentum
+        import rotation_screen
+
+        self.assertEqual(rotation_screen.DEFAULT_TICKERS, demo_universe.ROTATION_TICKERS)
+        self.assertEqual(growth_momentum.DEFAULT_TICKERS, demo_universe.GROWTH_TICKERS)
+        self.assertTrue(demo_universe.ROTATION_TICKERS)
+        self.assertTrue(demo_universe.GROWTH_TICKERS)
+
+
+class RotationRowsPayloadTests(unittest.TestCase):
+    def test_rotation_rows_payload_includes_blanks(self):
+        import rotation_screen
+
+        fake = FakeYahoo({"AAPL": accelerating_quarterly(), "MSFT": pd.DataFrame()})
+        rows = rotation_screen.screen_tickers(["AAPL", "MSFT"], provider=fake)
+        payload = rotation_screen.payload_from_rows(rows, "rotation.csv")
+
+        tickers = [row["ticker"] for row in payload["top"]]
+        self.assertEqual(tickers[0], "AAPL")
+        self.assertIn("MSFT", tickers)
+        blank = next(row for row in payload["top"] if row["ticker"] == "MSFT")
+        self.assertIn("blank", blank["detail"].lower())
+        self.assertIn("blank", payload["summary"].lower())
+
+
+class GrowthSequentialTests(unittest.TestCase):
+    def test_growth_rows_payload_recomputes_sequential_with_provider(self):
+        import growth_momentum
+
+        fake = FakeYahoo({"AAPL": accelerating_quarterly()})
+        rows = growth_momentum.screen_tickers(["AAPL"], provider=fake)
+        payload = growth_momentum.build_result_payload(rows, provider=fake)
+
+        self.assertEqual(payload["top"][0]["ticker"], "AAPL")
+        self.assertIn("sequential QoQ +", payload["top"][0]["detail"])
+        self.assertNotIn("sequential QoQ n/a", payload["top"][0]["detail"])
+
+    def test_growth_rows_payload_accepts_sequential_map(self):
+        import growth_momentum
+
+        fake = FakeYahoo({"AAPL": accelerating_quarterly()})
+        rows = growth_momentum.screen_tickers(["AAPL"], provider=fake)
+        payload = growth_momentum.build_result_payload(
+            rows, sequential={"AAPL": (0.25, "accelerating (+10.0%, +25.0%)")}
+        )
+
+        self.assertIn("+25.0%", payload["top"][0]["detail"])
+
+
+class FinancialsKindTests(unittest.TestCase):
+    def test_yahoo_client_accepts_annual_quarterly_spellings(self):
+        from yahoo_client import _financials_attr
+
+        self.assertEqual(_financials_attr("annual"), "financials")
+        self.assertEqual(_financials_attr("quarterly"), "quarterly_financials")
+        self.assertEqual(_financials_attr("income"), "financials")
+        self.assertEqual(_financials_attr("quarterly-income"), "quarterly_financials")
+
+
 if __name__ == "__main__":
     unittest.main()

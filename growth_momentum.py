@@ -25,12 +25,7 @@ import json
 import os
 import tempfile
 
-# Curated universe: symbol-selection input only. No KG reads; membership here
-# implies nothing about a company's fundamentals.
-DEFAULT_TICKERS = """
-MU NVDA TSM WDC LITE AVGO AMD MRVL SNDK
-VTRS HPQ GM VALE PFE NVO ADBE PBR AAPL MSFT
-""".split()
+from demo_universe import GROWTH_TICKERS as DEFAULT_TICKERS
 
 REVENUE_ROWS = ("total revenue", "total revenues", "revenue", "revenues", "sales",
                 "total net sales", "net sales", "total operating revenue")
@@ -167,6 +162,53 @@ def qoq_rows(tickers, provider=None):
     return rows
 
 
+def payload_from_parts(rows, sequential_map, report_path=None):
+    """Rank YoY rows with a sequential-QoQ map; blanks last with "blank" detail.
+
+    Shared core behind :func:`build_rotation_payload`,
+    :func:`build_result_payload`, and ``main()`` so every path carries the
+    same blank-in-top contract and the same QoQ signal.
+    """
+    quarterly = [r for r in rows if r[1] == "quarterly" and isinstance(r[2], float)]
+    blanks = sorted({r[0] for r in rows if not isinstance(r[2], float)})
+    top = []
+    for rank, (tk, kind, last, prev, note) in enumerate(
+            sorted(quarterly, key=lambda r: -r[2])[:10], 1):
+        seq = sequential_map.get(tk, (None, ""))[0]
+        top.append({
+            "rank": rank,
+            "ticker": tk,
+            "name": tk,
+            "detail": (f"quarterly YoY {pct(last)} (prior {pct(prev)}, "
+                       f"{note.split('(')[0].strip()}); sequential QoQ {pct(seq)}"),
+        })
+    for tk in blanks:
+        if len(top) >= 10:
+            break
+        top.append({
+            "rank": len(top) + 1,
+            "ticker": tk,
+            "name": tk,
+            "detail": f"blank — insufficient Yahoo statements for {tk}; no growth signal",
+        })
+    return {
+        "summary": (f"{len(quarterly)} quarterly YoY signals; "
+                    f"{len(blanks)} blank (insufficient Yahoo statements)"),
+        "report_path": str(report_path) if report_path else None,
+        "top": top,
+    }
+
+
+def _sequential_map(rows, provider, sequential):
+    """Resolve the ticker -> (qoq_last, note) map for a rows payload."""
+    if sequential is not None:
+        return sequential
+    if provider is None:
+        return {}
+    tickers = sorted({r[0] for r in rows})
+    return {tk: (last, note) for tk, last, note in qoq_rows(tickers, provider=provider)}
+
+
 def build_rotation_payload(tickers, report_path=None, provider=None):
     """Ranked payload for the CLI dashboard, fetched via Yahoo.
 
@@ -175,75 +217,24 @@ def build_rotation_payload(tickers, report_path=None, provider=None):
     tickers = [t.strip().upper() for t in tickers if t.strip()]
     rows = screen_tickers(tickers, provider=provider)
     sequential = {tk: (last, note) for tk, last, note in qoq_rows(tickers, provider=provider)}
-    quarterly = [r for r in rows if r[1] == "quarterly" and isinstance(r[2], float)]
-    blanks = sorted({r[0] for r in rows if not isinstance(r[2], float)})
-    top = []
-    for rank, (tk, kind, last, prev, note) in enumerate(
-            sorted(quarterly, key=lambda r: -r[2])[:10], 1):
-        seq = sequential.get(tk, (None, ""))[0]
-        top.append({
-            "rank": rank,
-            "ticker": tk,
-            "name": tk,
-            "detail": (f"quarterly YoY {pct(last)} (prior {pct(prev)}, "
-                       f"{note.split('(')[0].strip()}); sequential QoQ {pct(seq)}"),
-        })
-    for tk in blanks:
-        if len(top) >= 10:
-            break
-        top.append({
-            "rank": len(top) + 1,
-            "ticker": tk,
-            "name": tk,
-            "detail": f"blank — insufficient Yahoo statements for {tk}; no growth signal",
-        })
-    return {
-        "summary": (f"{len(quarterly)} quarterly YoY signals; "
-                    f"{len(blanks)} blank (insufficient Yahoo statements)"),
-        "report_path": str(report_path) if report_path else None,
-        "top": top,
-    }
+    return payload_from_parts(rows, sequential, report_path)
 
 
-def build_result_payload(tickers_or_rows, report_path=None, provider=None):
+def build_result_payload(tickers_or_rows, report_path=None, provider=None, sequential=None):
     """Ranked payload for the CLI dashboard.
 
     Accepts either a list of ticker symbols (fetched via Yahoo, same as
     :func:`build_rotation_payload`) or a list of pre-screened
-    (ticker, kind, last, prev, note) rows.
+    (ticker, kind, last, prev, note) rows. For rows, pass ``sequential``
+    (a ticker -> (qoq_last, note) map, e.g. from :func:`qoq_rows`) or a
+    ``provider`` to recompute it; otherwise the sequential leg honestly
+    reads n/a since no statements are available without a fetch.
     """
     if tickers_or_rows and all(isinstance(c, str) for c in tickers_or_rows):
         return build_rotation_payload(tickers_or_rows, report_path, provider=provider)
     rows = list(tickers_or_rows)
-    sequential = {}
-    quarterly = [r for r in rows if r[1] == "quarterly" and isinstance(r[2], float)]
-    blanks = sorted({r[0] for r in rows if not isinstance(r[2], float)})
-    top = []
-    for rank, (tk, kind, last, prev, note) in enumerate(
-            sorted(quarterly, key=lambda r: -r[2])[:10], 1):
-        seq = sequential.get(tk, (None, ""))[0]
-        top.append({
-            "rank": rank,
-            "ticker": tk,
-            "name": tk,
-            "detail": (f"quarterly YoY {pct(last)} (prior {pct(prev)}, "
-                       f"{note.split('(')[0].strip()}); sequential QoQ {pct(seq)}"),
-        })
-    for tk in blanks:
-        if len(top) >= 10:
-            break
-        top.append({
-            "rank": len(top) + 1,
-            "ticker": tk,
-            "name": tk,
-            "detail": f"blank — insufficient Yahoo statements for {tk}; no growth signal",
-        })
-    return {
-        "summary": (f"{len(quarterly)} quarterly YoY signals; "
-                    f"{len(blanks)} blank (insufficient Yahoo statements)"),
-        "report_path": str(report_path) if report_path else None,
-        "top": top,
-    }
+    return payload_from_parts(
+        rows, _sequential_map(rows, provider, sequential), report_path)
 
 
 def write_result_json(path, payload):
@@ -293,7 +284,8 @@ def main(argv=None):
     for tk, kind, last, prev, note in sorted(q, key=lambda r: -r[2]):
         print(f"   {tk:6} {pct(last):>9}   (prior {pct(prev)}, {note.split('(')[0].strip()})")
     print("\n=== SEQUENTIAL (QoQ) — the sharper signal for rollover ===")
-    for tk, last, note in sorted(qoq_rows(tickers),
+    seq_rows = qoq_rows(tickers)
+    for tk, last, note in sorted(seq_rows,
                                  key=lambda r: (r[1] is None, -(r[1] or 0))):
         print(f"   {tk:6} latest QoQ {pct(last):>9}  {note}")
     blanks = sorted({r[0] for r in rows if not isinstance(r[2], float)})
@@ -303,7 +295,9 @@ def main(argv=None):
             print(f"   {tk:6} blank — no usable Yahoo statements")
     print(f"\nrows: {len(rows)}   csv: {a.csv_out}")
     if a.result_json:
-        write_result_json(a.result_json, build_result_payload(rows, os.path.abspath(a.csv_out)))
+        write_result_json(a.result_json, payload_from_parts(
+            rows, {tk: (last, note) for tk, last, note in seq_rows},
+            os.path.abspath(a.csv_out)))
 
 
 if __name__ == "__main__":

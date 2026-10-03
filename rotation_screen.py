@@ -27,15 +27,9 @@ import csv
 import json
 import os
 import statistics
-import sys
 import tempfile
 
-# Curated universe: symbol-selection input only. No KG reads; membership here
-# implies nothing about a company's fundamentals.
-DEFAULT_TICKERS = """
-AAPL MSFT NVDA AMZN GOOGL META AVGO AMD MU TSM
-VTRS HPQ GM VALE PFE NVO ADBE PBR JPM XOM
-""".split()
+from demo_universe import ROTATION_TICKERS as DEFAULT_TICKERS
 
 BOOK = ["VTRS", "HPQ", "GM", "VALE", "SM", "PFE", "PRU", "NVO", "ADBE", "CAG", "GIS", "PBR"]
 
@@ -217,13 +211,13 @@ def shortlist(rows):
     return cand, unvalued
 
 
-def build_rotation_payload(tickers, report_path=None, provider=None, fx=None):
-    """Ranked payload for the CLI dashboard, fetched via Yahoo.
+def payload_from_rows(rows, report_path=None):
+    """Rank already-screened rows; blanks last with a "blank" detail.
 
-    Tickers without usable Yahoo statements rank last with a "blank"
-    detail, never fabricated.
+    Shared core behind :func:`build_rotation_payload` and ``main()`` so the
+    CLI artifact carries the same blank-in-top contract as the tested
+    ticker path.
     """
-    rows = screen_tickers(tickers, provider=provider, fx=fx)
     passing, _ = shortlist(rows)
     ranked = sorted(passing, key=lambda item: -item["qoq_last"])
     blanks = [r for r in rows if r.get("qoq_last") is None]
@@ -257,12 +251,25 @@ def build_rotation_payload(tickers, report_path=None, provider=None, fx=None):
     }
 
 
+def build_rotation_payload(tickers, report_path=None, provider=None, fx=None):
+    """Ranked payload for the CLI dashboard, fetched via Yahoo.
+
+    Tickers without usable Yahoo statements rank last with a "blank"
+    detail, never fabricated.
+    """
+    return payload_from_rows(
+        screen_tickers(tickers, provider=provider, fx=fx), report_path)
+
+
 def build_result_payload(candidates, csv_path=None, provider=None, fx=None):
     """Ranked payload for the CLI dashboard.
 
     Accepts either a list of ticker symbols (fetched via Yahoo, same as
     :func:`build_rotation_payload`) or a list of pre-screened row dicts
-    (legacy ranked path).
+    (legacy ranked path). The legacy path ranks exactly the rows it is
+    given — callers that pre-filtered candidates own blank handling, so it
+    intentionally does not append blanks; use :func:`payload_from_rows`
+    (or the ticker path) for the blank-in-top contract.
     """
     if candidates and all(isinstance(c, str) for c in candidates):
         return build_rotation_payload(candidates, csv_path, provider=provider, fx=fx)
@@ -383,7 +390,7 @@ def main(argv=None):
             print(f"   {r['ticker']:6} blank — {r.get('note', 'no usable Yahoo statements')}")
     print(f"\nrows: {len(rows)}   csv: {a.csv_out}")
     if a.result_json:
-        write_result_json(a.result_json, build_result_payload(cand, os.path.abspath(a.csv_out)))
+        write_result_json(a.result_json, payload_from_rows(rows, os.path.abspath(a.csv_out)))
 
 
 if __name__ == "__main__":

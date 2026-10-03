@@ -52,6 +52,31 @@ def _cache_key(op: str, ticker: str, kwargs: dict[str, Any]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+_FINANCIALS_ATTRS = {
+    "income": "financials",
+    "annual": "financials",
+    "quarterly-income": "quarterly_financials",
+    "quarterly": "quarterly_financials",
+    "balance": "balance_sheet",
+    "annual-balance": "balance_sheet",
+    "quarterly-balance": "quarterly_balance_sheet",
+    "cashflow": "cashflow",
+    "annual-cashflow": "cashflow",
+    "quarterly-cashflow": "quarterly_cashflow",
+}
+
+
+def _financials_attr(kind: str) -> str:
+    """Map a statement-kind spelling to the yfinance attribute name.
+
+    Accepts both the ``income``/``quarterly-income`` spellings used by
+    :meth:`YahooClient.get_financials` and the ``annual``/``quarterly``
+    spellings used in the screen briefs. Unknown kinds fall back to the
+    annual income statement (pre-existing behaviour).
+    """
+    return _FINANCIALS_ATTRS.get(kind, "financials")
+
+
 def _default_provider(ticker: str, op: str = "info", **kwargs: Any) -> Any:
     """Live Yahoo provider via yfinance. Only used when no provider is injected."""
     import yfinance as yf
@@ -66,16 +91,7 @@ def _default_provider(ticker: str, op: str = "info", **kwargs: Any) -> Any:
             auto_adjust=False,
         )
     if op == "financials":
-        kind = kwargs.get("kind", "income")
-        mapping = {
-            "income": "financials",
-            "quarterly-income": "quarterly_financials",
-            "balance": "balance_sheet",
-            "quarterly-balance": "quarterly_balance_sheet",
-            "cashflow": "cashflow",
-            "quarterly-cashflow": "quarterly_cashflow",
-        }
-        return getattr(stock, mapping.get(kind, "financials"))
+        return getattr(stock, _financials_attr(kwargs.get("kind", "income")))
     if op == "earnings_dates":
         return stock.get_earnings_dates(limit=kwargs.get("limit", 12))
     if op == "news":
