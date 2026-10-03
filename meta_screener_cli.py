@@ -167,6 +167,11 @@ def command_for(
             "--csv-out", str(result_dir / f"{screener['id']}.csv"),
             "--result-json", str(result_dir / f"{screener['id']}.json"),
         ])
+    elif relative_file == "growth_momentum.py" and result_dir is not None:
+        command.extend([
+            "--csv-out", str(result_dir / f"{screener['id']}.csv"),
+            "--result-json", str(result_dir / f"{screener['id']}.json"),
+        ])
     elif relative_file in {"short_interest.py", "dividend_analysis.py"} and result_dir is not None:
         command.extend(["--result-json", str(result_dir / f"{screener['id']}.json")])
     elif screener.get("batchable"):
@@ -341,7 +346,8 @@ def result_artifact_for(screener: dict[str, Any], result_dir: Path) -> Path | No
         return None
     relative_file = script.relative_to(ROOT).as_posix()
     if relative_file in {
-        "meta_screen.py", "rotation_screen.py", "short_interest.py", "dividend_analysis.py"
+        "meta_screen.py", "rotation_screen.py", "growth_momentum.py",
+        "short_interest.py", "dividend_analysis.py",
     }:
         return result_dir / f"{screener['id']}.json"
     return None

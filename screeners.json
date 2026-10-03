@@ -57,13 +57,16 @@
       "name": "Fundamental Rotation Screen",
       "file": "rotation_screen.py",
       "stage": "discovery",
-      "description": "Ranks stored company fundamentals by revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
-      "provider": "Local Finance Knowledge Graph history",
-      "yahoo": false,
-      "requirements": [],
+      "description": "Ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
       "reads": [
-        "Datasets/History/fundamentals_annual",
-        "Datasets/History/fundamentals_quarterly"
+        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
       ],
       "writes": [
         "rotation_screen.csv"
@@ -76,15 +79,20 @@
       "name": "Revenue Growth Momentum",
       "file": "growth_momentum.py",
       "stage": "discovery",
-      "description": "Compares each company's own annual and quarterly revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
-      "provider": "Local Finance Knowledge Graph history",
-      "yahoo": false,
-      "requirements": [],
-      "reads": [
-        "Datasets/History/fundamentals_annual",
-        "Datasets/History/fundamentals_quarterly"
+      "description": "Compares each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
       ],
-      "writes": [],
+      "reads": [
+        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "growth_momentum.csv"
+      ],
       "default_enabled": true,
       "args": []
     },
