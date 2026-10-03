@@ -2,7 +2,7 @@
 
 **Find stocks worth a closer look—without running scripts one by one.**
 
-Type `meta-screener` to run the core screen. It checks a demo universe, ranks companies by overlap across 47 signals, and prints the leading names. The repo also includes 82 Python tools from the wider Finance AI workflow.
+Type `meta-screener` to run the core screen. It checks a demo universe, ranks companies by overlap across 47 signals, and prints the leading names. The repo also includes 82 Python tools from the wider Finance AI workflow; [`PYTHON_TOOLS.md`](PYTHON_TOOLS.md) catalogs every one of them by purpose.
 
 ## 🚀 Install
 
@@ -31,7 +31,7 @@ meta-screener run --stage discovery
 meta-screener run --all
 ```
 
-`run --all` runs the 16 screens registered in `screeners.json`. The other Python files are supporting tools; they do not run automatically.
+`run --all` runs the default-enabled subset of the 17 workflows registered in `screeners.json`: 16 run by default, while `screen-history` is an optional outcome tracker excluded from the default run. The other Python files are supporting tools; they do not run automatically. See [`PYTHON_TOOLS.md`](PYTHON_TOOLS.md) for the full catalog.
 
 ## 📊 What the core screen checks
 

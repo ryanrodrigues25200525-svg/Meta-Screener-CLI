@@ -1,3 +1,4 @@
+"""corr_regime.py — within-cluster vs cross-cluster return correlations for the semis and value halves."""
 import csv, os, statistics
 
 D = "/documents/Finance Knowledge Graph/Datasets/History/prices_daily"

@@ -1,3 +1,4 @@
+"""daily_gaps.py — coverage-gap report for the stored daily price layer, per ticker and overall."""
 import csv, glob, os, collections
 
 D = "/documents/Finance Knowledge Graph/Datasets/History/prices_daily"

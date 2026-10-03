@@ -1,3 +1,4 @@
+"""verify_3m.py — 3-month price changes for the semis complex and the value half, from the daily layer."""
 import csv, os, statistics
 
 D = "/documents/Finance Knowledge Graph/Datasets/History/prices_daily"
