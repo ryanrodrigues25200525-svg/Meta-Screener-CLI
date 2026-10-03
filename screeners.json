@@ -42,8 +42,7 @@
         "numpy"
       ],
       "reads": [
-        "Built-in demo universe; optional --universe CSV",
-        "Local Finance Knowledge Graph company/theme notes"
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
       ],
       "writes": [
         "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
@@ -122,13 +121,16 @@
       "name": "Market Breadth and Theme Rotation",
       "file": "breadth_rotation.py",
       "stage": "market-context",
-      "description": "Measures shares above a 10-month moving average, positive 3-month returns, and median theme returns from stored monthly prices.",
-      "provider": "Local Finance Knowledge Graph history",
-      "yahoo": false,
-      "requirements": [],
+      "description": "Measures shares above a long moving average, positive 3-month returns, and median group returns from Yahoo daily closes.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
       "reads": [
-        "Datasets/History/prices_monthly",
-        "Themes/*.md"
+        "Yahoo Finance daily closes per ticker via yahoo_client; built-in symbol list as selection input only"
       ],
       "writes": [],
       "default_enabled": true,
