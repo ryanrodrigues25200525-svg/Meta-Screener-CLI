@@ -79,7 +79,10 @@ export function loadLatestSavedRun(root: string, registry: Registry): LoadedHist
     const record = asRecord(parsed);
     if (!record) continue;
     const finishedAtMs = parseFinishedAtMs(record);
-    const key = Math.max(finishedAtMs ?? Number.NEGATIVE_INFINITY, mtimeMs);
+    // Prefer logical time: finished_at wins whenever valid; mtime is only
+    // a fallback for records missing/invalid finished_at so a touched copy
+    // of a stale run cannot outrank a later logical run.
+    const key = finishedAtMs ?? mtimeMs;
     if (best && key <= bestKey) continue;
     const state = toDisplayState(record, known, finishedAtMs);
     best = { record, state, finishedAtMs, sourcePath };

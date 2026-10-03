@@ -23,3 +23,15 @@ export function shouldAutoRefresh(
 export function markRunStarted(settings: RefreshSettings, now: number): void {
   settings.lastRunAt = now;
 }
+
+/**
+ * Toggle opt-in daily refresh. Enabling anchors the 24h window at the toggle
+ * time (never from restored `run.lastFinishedAt`, which may be days old and
+ * would otherwise cause an immediate catch-up run). Disabling clears the
+ * anchor.
+ */
+export function toggleRefresh(settings: RefreshSettings, now: number): boolean {
+  settings.enabled = !settings.enabled;
+  settings.lastRunAt = settings.enabled ? now : null;
+  return settings.enabled;
+}

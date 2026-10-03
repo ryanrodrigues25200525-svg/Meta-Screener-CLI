@@ -3,7 +3,7 @@ import { describeResult } from "./events.js";
 import { blankRunState } from "./events.js";
 import { loadLatestSavedRun } from "./history.js";
 import { groupByStage, orderedScreeners, SelectionModel } from "./registry.js";
-import { markRunStarted, shouldAutoRefresh, type RefreshSettings } from "./refresh.js";
+import { markRunStarted, shouldAutoRefresh, toggleRefresh, type RefreshSettings } from "./refresh.js";
 import { startRunner, type ActiveRun } from "./runner.js";
 import { NARROW_WIDTH, buildRunnerCommand, resolveRuntime } from "./runtime.js";
 import type { DashboardRunState, Registry } from "./types.js";
@@ -269,10 +269,7 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
         paint();
         return;
       case "f":
-        refresh.enabled = !refresh.enabled;
-        if (refresh.enabled && refresh.lastRunAt === null && run.lastFinishedAt !== null) {
-          refresh.lastRunAt = run.lastFinishedAt;
-        }
+        toggleRefresh(refresh, Date.now());
         paint();
         return;
       case "return":

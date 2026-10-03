@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describeResult } from "../src/events.js";
 import { loadLatestSavedRun } from "../src/history.js";
-import { shouldAutoRefresh } from "../src/refresh.js";
+import { shouldAutoRefresh, toggleRefresh } from "../src/refresh.js";
 import { SelectionModel, groupByStage, orderedScreeners, parseRegistry } from "../src/registry.js";
 import type { Registry } from "../src/types.js";
 
@@ -195,5 +195,53 @@ describe("selected-only daily refresh", () => {
     expect(shouldAutoRefresh({ enabled: false, lastRunAt: NOW - 2 * DAY }, NOW, false, 3)).toBe(false);
     expect(shouldAutoRefresh({ enabled: true, lastRunAt: null }, NOW, false, 3)).toBe(false);
     expect(shouldAutoRefresh({ enabled: true, lastRunAt: NOW - 60_000 }, NOW, false, 3)).toBe(false);
+  });
+
+  test("opting in after a stale saved run does not trigger an immediate run", () => {
+    // Restored prior-session state older than 24h must not seed the timer:
+    // seeding from it would look due immediately.
+    const staleFinishedAt = NOW - 2 * DAY;
+    expect(shouldAutoRefresh({ enabled: true, lastRunAt: staleFinishedAt }, NOW, false, 1)).toBe(true);
+    // Toggle-on anchors at the toggle time instead.
+    const settings = { enabled: false, lastRunAt: null as number | null };
+    toggleRefresh(settings, NOW);
+    expect(settings.enabled).toBe(true);
+    expect(settings.lastRunAt).toBe(NOW);
+    expect(shouldAutoRefresh(settings, NOW, false, 1)).toBe(false);
+    // Toggle-off clears the anchor.
+    toggleRefresh(settings, NOW + 1_000);
+    expect(settings.enabled).toBe(false);
+    expect(settings.lastRunAt).toBeNull();
+  });
+});
+
+describe("saved-run ranking by logical finish time", () => {
+  test("later finished_at wins even when the older run file is touched newer", () => {
+    const root = makeRoot();
+    const olderLogical = {
+      run_id: "run-old",
+      started_at: "2026-10-02T10:00:00Z",
+      finished_at: "2026-10-02T10:05:00Z",
+      status: "ok",
+      exit_code: 0,
+      screeners: [],
+    };
+    const newerLogical = {
+      run_id: "run-new",
+      started_at: "2026-10-03T10:00:00Z",
+      finished_at: "2026-10-03T10:05:00Z",
+      status: "ok",
+      exit_code: 0,
+      screeners: [],
+    };
+    writeRun(root, "run-old.json", olderLogical);
+    writeRun(root, "run-new.json", newerLogical);
+    // Make the stale logical run look newer on disk (copied/touched).
+    const nowSec = Date.now() / 1000;
+    const oldSec = nowSec - 2 * 24 * 60 * 60;
+    utimesSync(join(root, ".meta-screener", "runs", "run-old.json"), nowSec, nowSec);
+    utimesSync(join(root, ".meta-screener", "runs", "run-new.json"), oldSec, oldSec);
+    const loaded = loadLatestSavedRun(root, SHUFFLED);
+    expect(loaded?.record.run_id).toBe("run-new");
   });
 });
