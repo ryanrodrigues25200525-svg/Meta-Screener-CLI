@@ -26,7 +26,7 @@
 - `meta_screener_cli.py`: validate and select registered workflows, launch the dashboard with no arguments, preserve direct subcommands, emit structured run events, sequence child processes, and persist run summaries.
 - `meta_screen.py`: accept a validated subset of built-in check names for named custom screen profiles and expose a stable top-ranking result for the runner.
 - `rotation_screen.py`, `short_interest.py`, and `dividend_analysis.py`: expose their existing ranked output as optional JSON result rows without changing their legacy reports.
-- `kg_links.py`: make `load_ticker_map(root=...)` resolve Company notes from the supplied root so `FINANCE_KG_ROOT` works for isolated runs.
+- `kg_links.py`: make `load_ticker_map(root=...)` resolve Company notes from the supplied root and ensure `company_link` respects an explicitly supplied empty map so `FINANCE_KG_ROOT` isolates runs.
 - `screeners.json`: remain the versioned source of registered workflow metadata at schema/project version `0.3.0`; validate built-in and custom entries.
 - `screener_mcp.py`: expose the shared runner and safe registry operations over local stdio MCP.
 - `tui/`: contain the Bun/OpenTUI terminal application; it renders events and never starts screen scripts directly.
