@@ -51,7 +51,7 @@ Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, a
 
 ## MCP for local AI agents
 
-After installing the optional MCP extra, configure your MCP client to launch `meta-screener-mcp` over stdio. The server can list workflows and checks, preview plans, run one or more workflows, create a named screen from existing checks, register an existing Python workflow inside this repository, and unregister a workflow. Unregistering keeps the source file; MCP tools do not write arbitrary Python source.
+After installing the optional MCP extra, configure your MCP client to launch `meta-screener-mcp` over stdio. The server can list workflows and checks, preview plans, run one or more workflows, create a named screen from existing checks, register an existing Python workflow inside this repository, and unregister a workflow. Unregistering keeps the source file; MCP tools do not write arbitrary Python source. Full setup, tool table, and examples: [`docs/MCP.md`](docs/MCP.md).
 
 Example MCP client entry:
 
