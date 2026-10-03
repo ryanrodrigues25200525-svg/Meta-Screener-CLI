@@ -46,6 +46,30 @@ class TestYahooClient(unittest.TestCase):
                 sys.modules["yfinance"] = old
         self.assertEqual(result, stories)
 
+    def test_unreadable_disk_cache_is_a_miss_not_a_failure(self):
+        import pickle
+        import yahoo_client
+
+        with tempfile.TemporaryDirectory() as tmp:
+            client = yahoo_client.YahooClient(
+                provider=lambda ticker, **kw: {"ticker": ticker},
+                cache_dir=Path(tmp),
+            )
+            key = yahoo_client._cache_key("info", "AAPL", {})
+            path = Path(tmp) / f"yahoo_{key}.pkl"
+            with open(path, "wb") as handle:
+                pickle.dump((0.0, {"ticker": "STALE"}), handle)
+            real_load = pickle.load
+
+            def boom(*args, **kwargs):
+                raise ModuleNotFoundError("No module named 'pyarrow'")
+
+            pickle.load = boom
+            try:
+                self.assertEqual(client.get_info("AAPL"), {"ticker": "AAPL"})
+            finally:
+                pickle.load = real_load
+
     def test_shared_client_serializes_and_stops_on_rate_limit(self):
         from yahoo_client import YahooClient
 

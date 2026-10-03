@@ -205,7 +205,14 @@ class YahooClient:
         try:
             with open(path, "rb") as handle:
                 timestamp, value = pickle.load(handle)
-        except (OSError, ValueError, EOFError, pickle.UnpicklingError):
+        except Exception:
+            # Cache is best-effort: an unreadable entry (missing optional
+            # dependency, corrupt bytes, newer pickle protocol) is a miss,
+            # never a screen failure. Remove it so the next read refetches.
+            try:
+                path.unlink()
+            except OSError:
+                pass
             return None
         if time.time() - timestamp >= self._ttl:
             try:
