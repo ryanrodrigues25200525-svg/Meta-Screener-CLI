@@ -1,0 +1,27 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.10"}
+      - run: pip install -r requirements-screening.txt
+      - run: pip install -e ".[mcp]"
+      - run: python -m unittest discover -s tests
+  tui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: {bun-version: "1.4.0"}
+      - run: bun install --frozen-lockfile
+        working-directory: tui
+      - run: bun test
+        working-directory: tui
+      - run: bunx tsc --noEmit
+        working-directory: tui
