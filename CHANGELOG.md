@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `screeners.json` registry of 17 workflows across 5 stages; 16 are enabled
   by default and `screen-history` is an optional outcome tracker excluded
   from the default all-run.
-- CLI workflow selection and inspection: `meta-screener list`
+- `metascreener` no-hyphen console command as the primary CLI name; the existing
+  `meta-screener` command remains available as an alias.
+- CLI workflow selection and inspection: `metascreener list`
   (with `--checks` for the 47 registered `meta_screen.py` checks), `plan`,
   and `run` with `--all`, `--stage`, or repeatable `--screener`; multiple
   selections run in registry stage order. `plan` prints commands without
@@ -42,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   between screeners and stages. A detected Yahoo rate limit stops the run
   without automatic retries; `--continue-on-error` continues past ordinary
   failures only.
-- OpenTUI terminal dashboard launched by a bare `meta-screener` invocation
+- OpenTUI terminal dashboard launched by a bare `metascreener` invocation
   (requires Bun 1.3+ with `tui` dependencies installed). It groups
   registered workflows by stage, runs the selection sequentially through
   the `--json-events` stream, shows ticker rankings only for workflows that
@@ -61,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Version metadata aligned at 0.3.0: `VERSION`, `pyproject.toml`
-  (`meta-screener-cli`, `requires-python >= 3.10`, `meta-screener` and
+  (`meta-screener-cli`, `requires-python >= 3.10`, `metascreener`, `meta-screener`, and
   `meta-screener-mcp` console scripts, `mcp` extra), `screeners.json`
   `version`, and the TUI `package.json` version.
 - README documents the Python 3.10+/Bun 1.3+ install, the dashboard and its

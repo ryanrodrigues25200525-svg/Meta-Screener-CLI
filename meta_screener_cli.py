@@ -237,7 +237,7 @@ def list_command(registry: dict[str, Any], show_checks: bool) -> int:
             for name, description in items:
                 print(f"    • {name} — {description}")
     else:
-        print("  Run `meta-screener list --checks` to see every name and criterion.")
+        print("  Run `metascreener list --checks` to see every name and criterion.")
     return 0
 
 
@@ -614,7 +614,7 @@ def add_selection_arguments(parser: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="meta-screener",
+        prog="metascreener",
         description="Open the dashboard or list, plan, and run Meta Screener workflows.",
     )
     parser.add_argument("--version", action="version", version=f"Meta Screener CLI {version()}")
@@ -639,7 +639,7 @@ def launch_tui() -> int:
     bun = shutil.which("bun")
     tui_dir = ROOT / "tui"
     if bun is None:
-        print("The OpenTUI dashboard requires Bun 1.3 or newer. Install Bun to use bare `meta-screener`.",
+        print("The OpenTUI dashboard requires Bun 1.3 or newer. Install Bun to use bare `metascreener`.",
               file=sys.stderr)
         return 2
     if not (tui_dir / "package.json").is_file():

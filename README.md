@@ -25,8 +25,10 @@ The full Python-file catalog is in [`PYTHON_TOOLS.md`](PYTHON_TOOLS.md); OpenTUI
 ## Run the dashboard
 
 ```bash
-meta-screener
+metascreener
 ```
+
+`metascreener` is the no-hyphen console command. The existing `meta-screener` name remains available as an alias. Both commands open the dashboard with no subcommand and use the same direct CLI commands below.
 
 The dashboard groups the registered workflows by stage, lets you select one or more, and runs them sequentially. It shows ticker rankings only for workflows that produce a ranked stock list; context, calendar, and research workflows show their status and available summary instead.
 
@@ -35,19 +37,19 @@ Keyboard controls: arrows or `j/k` move, `space` selects, `a` selects all defaul
 ## Run directly from the CLI
 
 ```bash
-meta-screener list
-meta-screener list --checks
-meta-screener plan --all
-meta-screener plan --screener meta-overlap --screener fundamental-rotation
-meta-screener run --screener meta-overlap
-meta-screener run --all
+metascreener list
+metascreener list --checks
+metascreener plan --all
+metascreener plan --screener meta-overlap --screener fundamental-rotation
+metascreener run --screener meta-overlap
+metascreener run --all
 ```
 
 `screeners.json` registers 17 workflows. Sixteen run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
 
 ## Yahoo Finance pacing
 
-Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `meta-screener plan ...` to review a selection before running it.
+Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
 
 ## MCP for local AI agents
 

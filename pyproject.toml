@@ -13,6 +13,7 @@ mcp = ["mcp>=2,<3"]
 
 [project.scripts]
 meta-screener = "meta_screener_cli:main"
+metascreener = "meta_screener_cli:main"
 meta-screener-mcp = "screener_mcp:main"
 
 [tool.setuptools]

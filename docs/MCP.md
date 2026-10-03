@@ -179,4 +179,4 @@ Yahoo-backed runs through `run_screeners` obey the same sequential CLI behavior 
 - If Yahoo reports a rate limit (`too many requests`, `429`, `YFRateLimitError`),
   the run stops and does not retry automatically.
   `run_screeners` surfaces this as `rate_limited: true` with `ok: false`.
-- Use `plan_screeners` (or `meta-screener plan ...`) to review a selection before running it.
+- Use `plan_screeners` (or `metascreener plan ...`) to review a selection before running it.

@@ -10,7 +10,7 @@ tool, test, or archived history.
 
 - [`meta_screener_cli.py`](meta_screener_cli.py) — opens the OpenTUI dashboard with no arguments; lists, plans, and runs registered workflows with paced JSON Lines events.
 
-## Registered screeners (run via `meta-screener`)
+## Registered screeners (run via `metascreener`)
 
 17 workflows are registered in `screeners.json`; 16 are enabled by default and
 `screen-history` is optional (excluded from the default all-run).

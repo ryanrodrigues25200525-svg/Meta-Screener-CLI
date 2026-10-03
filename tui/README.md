@@ -14,7 +14,8 @@ Requires Bun 1.3+.
 
 ## Run
 
-The Python launcher sets these and starts the dashboard with no arguments:
+The installed `metascreener` command (or the `meta-screener` alias) starts the
+dashboard with no arguments. The Python launcher sets these and starts Bun:
 
 ```sh
 META_SCREENER_ROOT=/path/to/repo META_SCREENER_PYTHON=/path/to/python bun run --cwd tui start

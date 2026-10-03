@@ -26,7 +26,7 @@ The implementation design and completed-task plan are in:
 
 ### CLI and runner
 
-- Running `meta-screener` with no subcommand launches the TUI. Explicit `list`, `plan`, and `run` still work without Bun.
+- Running `metascreener` with no subcommand launches the TUI. `meta-screener` remains as an alias; explicit `list`, `plan`, and `run` still work without Bun.
 - `list --checks` reports the 47 built-in `meta_screen.py` checks. The registry contains 17 workflows in five stages; 16 are enabled by default and `screen-history` is optional.
 - `run --json-events` emits structured JSON Lines, streams child output without blocking, runs selected workflows in registry order, and saves compact summaries under ignored `.meta-screener/runs/` with a 30-record retention limit.
 - Top-ten result adapters are available for `meta-overlap`, `fundamental-rotation`, `short-interest`, and `dividend-analysis`. Other workflows show their available status/summary without invented ticker rankings.
@@ -51,7 +51,7 @@ The optional `mcp` extra installs a local stdio MCP server with seven tools: `li
 
 - Python suite: **50 tests passed** with the optional MCP SDK v2 installed.
 - TUI suite: **34 tests passed**; `bunx tsc --noEmit` passed.
-- Python bytecode compilation, `meta-screener list --checks`, `meta-screener plan --all`, and `git diff --check` passed.
+- Python bytecode compilation, `metascreener list --checks`, `metascreener plan --all`, and `git diff --check` passed.
 - Catalog reconciliation: 89 tracked `.py` files, 89 unique descriptions, no missing or duplicate links.
 - TUI snapshots at 110 and 60 columns restored the saved run and displayed its rankings without requesting new market data.
 - OpenCode Go final reviews found no Critical or Important findings. The follow-up review left two minor coverage suggestions: explicitly test empty/missing `screener_id` events and add runner-level absolute/traversal path tests. Existing runtime guards remain in place.
