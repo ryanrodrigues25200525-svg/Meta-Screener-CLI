@@ -25,15 +25,18 @@ export function parseRegistry(text: string): Registry {
   return data;
 }
 
-/** Screeners in registry stage order (stable flat navigation order). */
+/** Screeners in registry stage order, preserving screeners.json file order within each stage. */
 export function orderedScreeners(registry: Registry): ScreenerMeta[] {
   const order = new Map(registry.stages.map((s, i) => [s.id, i]));
-  return [...registry.screeners].sort((a, b) => {
-    const oa = order.get(a.stage) ?? Number.MAX_SAFE_INTEGER;
-    const ob = order.get(b.stage) ?? Number.MAX_SAFE_INTEGER;
-    if (oa !== ob) return oa - ob;
-    return a.id.localeCompare(b.id);
-  });
+  return registry.screeners
+    .map((screener, index) => ({ screener, index }))
+    .sort((a, b) => {
+      const oa = order.get(a.screener.stage) ?? Number.MAX_SAFE_INTEGER;
+      const ob = order.get(b.screener.stage) ?? Number.MAX_SAFE_INTEGER;
+      if (oa !== ob) return oa - ob;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.screener);
 }
 
 export function groupByStage(registry: Registry): GroupedStage[] {
@@ -63,12 +66,11 @@ export class SelectionModel {
     }
   }
 
+  /** Startup selection: only the first default-enabled workflow. Run-all stays separate. */
   static fromRegistry(registry: Registry): SelectionModel {
     const items = orderedScreeners(registry);
-    return new SelectionModel(
-      items,
-      items.filter((s) => s.default_enabled !== false).map((s) => s.id),
-    );
+    const first = items.find((s) => s.default_enabled !== false);
+    return new SelectionModel(items, first ? [first.id] : []);
   }
 
   focused(): ScreenerMeta | undefined {

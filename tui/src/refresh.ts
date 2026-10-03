@@ -6,9 +6,15 @@ export interface RefreshSettings {
 }
 
 /** Foreground-only daily refresh: disabled by default, no catch-up burst. */
-export function shouldAutoRefresh(settings: RefreshSettings, now: number, running: boolean): boolean {
+export function shouldAutoRefresh(
+  settings: RefreshSettings,
+  now: number,
+  running: boolean,
+  selectedCount: number,
+): boolean {
   if (!settings.enabled) return false;
   if (running) return false;
+  if (selectedCount <= 0) return false;
   if (settings.lastRunAt === null) return false;
   return now - settings.lastRunAt >= DAILY_REFRESH_MS;
 }

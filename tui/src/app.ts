@@ -1,6 +1,7 @@
 import { BoxRenderable, TextRenderable, createCliRenderer } from "@opentui/core";
 import { describeResult } from "./events.js";
 import { blankRunState } from "./events.js";
+import { loadLatestSavedRun } from "./history.js";
 import { groupByStage, orderedScreeners, SelectionModel } from "./registry.js";
 import { markRunStarted, shouldAutoRefresh, type RefreshSettings } from "./refresh.js";
 import { startRunner, type ActiveRun } from "./runner.js";
@@ -93,7 +94,14 @@ export const FOOTER =
 export async function runDashboard(opts: AppOptions): Promise<void> {
   const groups = groupByStage(opts.registry);
   const selection = SelectionModel.fromRegistry(opts.registry);
-  const run: DashboardRunState = blankRunState();
+  // Restore the latest saved run record for display only; never launch here.
+  let run: DashboardRunState = blankRunState();
+  try {
+    const saved = loadLatestSavedRun(opts.root, opts.registry);
+    if (saved) run = saved.state;
+  } catch {
+    run = blankRunState();
+  }
   const refresh: RefreshSettings = { enabled: false, lastRunAt: null };
   let showDetails = false;
   let active: ActiveRun | null = null;
@@ -285,12 +293,14 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
 
   renderer.on("resize", () => paint());
 
-  // Opt-in foreground daily refresh: checked on a foreground timer only.
-  // No background process, no catch-up burst: at most one run per 24h window.
+  // Opt-in foreground daily refresh of the current selection only:
+  // checked on a foreground timer only. No background process, no catch-up
+  // burst: at most one run per 24h window, never with an empty selection or
+  // while a run is active.
   const timer = setInterval(() => {
     if (destroyed) return;
-    if (shouldAutoRefresh(refresh, Date.now(), run.running)) {
-      void launch(orderedScreeners(opts.registry).filter((s) => s.default_enabled !== false).map((s) => s.id));
+    if (shouldAutoRefresh(refresh, Date.now(), run.running, selection.count())) {
+      void launch(selection.selectedIds());
     }
   }, 60_000);
   timer.unref?.();

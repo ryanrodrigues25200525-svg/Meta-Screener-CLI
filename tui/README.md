@@ -38,3 +38,11 @@ bun run --cwd tui snapshot -- --width 60
 
 Runs are sequential; a second run cannot start while one is active. Rankings
 come only from `top` rows; other workflows show summary/report paths.
+A ticker shared with its company name renders once (`AAPL`, not `AAPL — AAPL`).
+
+At startup (and in `--snapshot` mode) the dashboard restores the latest valid
+record from `<root>/.meta-screener/runs/*.json` for display only — it never
+launches screeners by itself. Malformed records and unknown screener IDs are
+ignored. Startup preselects only the first default-enabled workflow
+(`meta-overlap`); `R` still runs all defaults, and the opt-in daily refresh
+reruns only the current selection (never with an empty selection).

@@ -5,6 +5,7 @@ import { runDashboard } from "./app.js";
 import { renderDashboardText } from "./layout.js";
 import { groupByStage, loadRegistryFile, orderedScreeners, SelectionModel } from "./registry.js";
 import { blankRunState } from "./events.js";
+import { loadLatestSavedRun } from "./history.js";
 import { joinPath, layoutForWidth, resolveRuntime } from "./runtime.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -27,16 +28,21 @@ async function snapshot(): Promise<void> {
   const groups = groupByStage(registry);
   const flat = orderedScreeners(registry);
   const selection = SelectionModel.fromRegistry(registry);
+  // Snapshot restores the latest saved run record for display only; never launches.
+  const saved = loadLatestSavedRun(root, registry);
+  const overall = saved
+    ? `snapshot · ${layoutForWidth(width)} · root=${root} · saved ${saved.record.run_id} ${saved.record.status}`
+    : `snapshot · ${layoutForWidth(width)} · root=${root}`;
   const text = renderDashboardText(
     {
       groups,
       flat,
       focusedIndex: selection.focusedIndex,
       selected: selection.selected,
-      run: blankRunState(),
+      run: saved?.state ?? blankRunState(),
       showDetails: true,
       refreshEnabled: false,
-      overall: `snapshot · ${layoutForWidth(width)} · root=${root}`,
+      overall,
     },
     { width, height },
   );

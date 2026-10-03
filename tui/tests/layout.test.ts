@@ -43,7 +43,7 @@ describe("narrow-terminal state/layout", () => {
     const groups = groupByStage(registry);
     expect(navText(selection, run, groups)).toContain("meta-overlap");
     expect(detailText(selection, run, false)).toContain(selection.focused()?.name ?? "");
-    expect(statusText(selection, run, { enabled: false, lastRunAt: null })).toContain("selected 16");
+    expect(statusText(selection, run, { enabled: false, lastRunAt: null })).toContain("selected 1");
   });
 });
 
@@ -71,10 +71,11 @@ describe("runner command + refresh", () => {
   test("foreground daily refresh is opt-in with no catch-up burst", () => {
     const now = 1_700_000_000_000;
     const day = 24 * 60 * 60 * 1000;
-    expect(shouldAutoRefresh({ enabled: false, lastRunAt: now - 2 * day }, now, false)).toBe(false);
-    expect(shouldAutoRefresh({ enabled: true, lastRunAt: null }, now, false)).toBe(false);
-    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 2 * day }, now, false)).toBe(true);
-    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 2 * day }, now, true)).toBe(false);
-    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 60_000 }, now, false)).toBe(false);
+    expect(shouldAutoRefresh({ enabled: false, lastRunAt: now - 2 * day }, now, false, 3)).toBe(false);
+    expect(shouldAutoRefresh({ enabled: true, lastRunAt: null }, now, false, 3)).toBe(false);
+    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 2 * day }, now, false, 1)).toBe(true);
+    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 2 * day }, now, false, 0)).toBe(false);
+    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 2 * day }, now, true, 3)).toBe(false);
+    expect(shouldAutoRefresh({ enabled: true, lastRunAt: now - 60_000 }, now, false, 3)).toBe(false);
   });
 });

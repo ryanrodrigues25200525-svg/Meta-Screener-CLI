@@ -117,7 +117,7 @@ export function describeResult(entry: ScreenerRunState | undefined): string {
   const parts: string[] = [];
   if (entry.top && entry.top.length > 0) {
     for (const row of entry.top.slice(0, 10)) {
-      const label = row.name ? `${row.ticker} — ${row.name}` : row.ticker;
+      const label = row.name && row.name !== row.ticker ? `${row.ticker} — ${row.name}` : row.ticker;
       parts.push(`#${row.rank} ${label}${row.detail ? ` · ${row.detail}` : ""}`);
     }
     return parts.join("\n");

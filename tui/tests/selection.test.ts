@@ -24,9 +24,9 @@ describe("workflow selection", () => {
     expect(groups.reduce((n, g) => n + g.screeners.length, 0)).toBe(17);
   });
 
-  test("selection preselects defaults and wraps navigation", () => {
+  test("selection preselects only the first default and wraps navigation", () => {
     const model = SelectionModel.fromRegistry(registry);
-    expect(model.count()).toBe(16);
+    expect(model.selectedIds()).toEqual(["meta-overlap"]);
     expect(model.selected.has("screen-history")).toBe(false);
     model.moveTo(0);
     model.move(-1);
