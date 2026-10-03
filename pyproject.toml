@@ -4,12 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "meta-screener-cli"
-version = "0.2.0"
+version = "0.3.0"
 description = "Staged, rate-limited command-line runner for stock screeners"
 requires-python = ">=3.10"
 
+[project.optional-dependencies]
+mcp = ["mcp>=2,<3"]
+
 [project.scripts]
 meta-screener = "meta_screener_cli:main"
+meta-screener-mcp = "screener_mcp:main"
 
 [tool.setuptools]
-py-modules = ["meta_screener_cli"]
+py-modules = ["meta_screener_cli", "screener_mcp"]

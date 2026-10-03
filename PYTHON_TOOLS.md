@@ -1,22 +1,22 @@
 # Python tools catalog
 
-82 tracked Python files: 1 runner, 17 registered screener scripts, 53
-supporting tools, 1 acceptance test, and 10 archived one-off migrations.
+88 tracked Python files: 1 runner, 17 registered workflow scripts, 53
+supporting tools, 1 MCP server, 6 tests, and 10 archived one-off migrations.
 Descriptions below come from each module's own docstring. The 17 registered
 workflows are the only scripts the CLI runs; everything else is a supporting
 tool, test, or archived history.
 
 ## Runner and workflow registry
 
-- [`meta_screener_cli.py`](meta_screener_cli.py) — lists, plans, and runs the registered screeners in rate-limited stages (`list`, `plan`, `run`).
+- [`meta_screener_cli.py`](meta_screener_cli.py) — opens the OpenTUI dashboard with no arguments; lists, plans, and runs registered workflows with paced JSON Lines events.
 
 ## Registered screeners (run via `meta-screener`)
 
 17 workflows are registered in `screeners.json`; 16 are enabled by default and
 `screen-history` is optional (excluded from the default all-run).
 
-- [`meta_screen.py`](meta_screen.py) (`meta-overlap`) — deterministic 47-check cross-signal breadth screen over a curated universe; ranks family breadth.
-- [`rotation_screen.py`](rotation_screen.py) (`fundamental-rotation`) — ranks the book and rotation themes on revenue growth, margin trend, and valuation from stored fundamentals.
+- [`meta_screen.py`](meta_screen.py) (`meta-overlap`) — deterministic 47-check cross-signal breadth screen over a curated universe; supports named check subsets and exports its top ranking.
+- [`rotation_screen.py`](rotation_screen.py) (`fundamental-rotation`) — ranks the book and rotation themes on revenue growth, margin trend, and valuation from stored fundamentals; exports the passing shortlist.
 - [`growth_momentum.py`](growth_momentum.py) (`revenue-growth-momentum`) — revenue growth and its direction per company from the stored fundamentals layer.
 - [`sector_rotation.py`](sector_rotation.py) (`sector-rotation`) — sector ETF performance over short and medium horizons.
 - [`breadth_rotation.py`](breadth_rotation.py) (`market-breadth`) — share of names above a 10-month moving average, positive 3-month returns, and median theme returns from stored monthly prices.
@@ -25,8 +25,8 @@ tool, test, or archived history.
 - [`commodities_fx.py`](commodities_fx.py) (`commodities-fx`) — commodity prices and FX rates.
 - [`cot_report.py`](cot_report.py) (`cot-futures-proxy`) — futures positioning via a yfinance proxy (not official CFTC data).
 - [`analyst_scan.py`](analyst_scan.py) (`analyst-consensus`) — sell-side consensus (recommendation, targets, analyst count) for graph-tracked tickers.
-- [`short_interest.py`](short_interest.py) (`short-interest`) — short-interest fields for portfolio holdings or an explicit ticker list.
-- [`dividend_analysis.py`](dividend_analysis.py) (`dividend-analysis`) — dividend yield and payout context for portfolio holdings.
+- [`short_interest.py`](short_interest.py) (`short-interest`) — ranks portfolio tickers by short percentage of float; also accepts an explicit ticker list.
+- [`dividend_analysis.py`](dividend_analysis.py) (`dividend-analysis`) — ranks portfolio tickers by dividend yield and payout context.
 - [`unusual_options.py`](unusual_options.py) (`options-activity`) — options-chain activity for holdings or an explicit ticker list.
 - [`catalyst_scan.py`](catalyst_scan.py) (`catalyst-calendar`) — upcoming events already recorded in the graph's Important Dates folder.
 - [`econ_calendar.py`](econ_calendar.py) (`macro-calendar`) — approximate recurring macro-event calendar (confirm dates with official sources).
@@ -110,16 +110,30 @@ tool, test, or archived history.
 
 - [`yahoo_guard.py`](yahoo_guard.py) — shared fail-fast handling for Yahoo Finance rate-limit exceptions.
 
+## MCP server
+
+- [`screener_mcp.py`](screener_mcp.py) — local stdio MCP server for listing, planning, running, creating, registering, and unregistering workflows.
+
 ## Tests
 
 - [`test_driver_map.py`](test_driver_map.py) — acceptance test re-deriving the driver map's headline numbers from the stored layer and CSV.
+- [`tests/test_cli.py`](tests/test_cli.py) — CLI selection, JSON Lines output, TUI dispatch, and run-record behavior.
+- [`tests/test_kg_links.py`](tests/test_kg_links.py) — ticker-map lookup honors an explicitly supplied graph root.
+- [`tests/test_meta_screen_checks.py`](tests/test_meta_screen_checks.py) — custom meta-screen check selection and ranked-result export.
+- [`tests/test_ranked_results.py`](tests/test_ranked_results.py) — JSON ranking adapters for rotation, short-interest, and dividend workflows.
+- [`tests/test_screener_mcp.py`](tests/test_screener_mcp.py) — MCP tool validation and registry operations with isolated registries.
 
 ## Archive — one-off migrations (not runnable screens)
 
 Preserved byte-for-byte under [`archive/one-off-migrations/2026/`](archive/one-off-migrations/2026/) with their own readme:
 
-- [`kg_repair.py`](archive/one-off-migrations/2026/kg_repair.py) through [`kg_repair5.py`](archive/one-off-migrations/2026/kg_repair5.py) — sequential deterministic vault integrity repairs ([`kg_repair2.py`](archive/one-off-migrations/2026/kg_repair2.py), [`kg_repair3.py`](archive/one-off-migrations/2026/kg_repair3.py), [`kg_repair4.py`](archive/one-off-migrations/2026/kg_repair4.py)).
-- [`backfill_comp.py`](archive/one-off-migrations/2026/backfill_comp.py) / [`backfill_comp2.py`](archive/one-off-migrations/2026/backfill_comp2.py) — competitor/partner/position backfills (holdings, then shortlist/watchlist).
+- [`kg_repair.py`](archive/one-off-migrations/2026/kg_repair.py) — first deterministic Finance Knowledge Graph cleanup and frontmatter repairs.
+- [`kg_repair2.py`](archive/one-off-migrations/2026/kg_repair2.py) — canonicalizes theme-company tokens to company-node titles and applies residual fixes.
+- [`kg_repair3.py`](archive/one-off-migrations/2026/kg_repair3.py) — collapses triple-bracket tokens and cleans remaining repair artifacts.
+- [`kg_repair4.py`](archive/one-off-migrations/2026/kg_repair4.py) — fixes link titles and creates missing source nodes.
+- [`kg_repair5.py`](archive/one-off-migrations/2026/kg_repair5.py) — wires remaining evidence gaps from existing Claims nodes.
+- [`backfill_comp.py`](archive/one-off-migrations/2026/backfill_comp.py) — backfills competitor, partner, and position fields for PM-holding company nodes.
+- [`backfill_comp2.py`](archive/one-off-migrations/2026/backfill_comp2.py) — backfills the same fields for remaining shortlist and watchlist nodes.
 - [`backfill_verdicts_20260912.py`](archive/one-off-migrations/2026/backfill_verdicts_20260912.py) — 2026-09-12 layer-3 verdict write.
 - [`repair_verdict_fields_20260912.py`](archive/one-off-migrations/2026/repair_verdict_fields_20260912.py) — 2026-09-12 verdict-date frontmatter repair.
 - [`driver_taxonomy_fix.py`](archive/one-off-migrations/2026/driver_taxonomy_fix.py) — COPPER-to-BASE_METALS driver taxonomy fix.

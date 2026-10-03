@@ -327,6 +327,19 @@ def screen(name, category):
     return deco
 
 
+def filter_screens(screens, selected_names):
+    """Return the registered checks selected by name, preserving registry order."""
+    if not selected_names:
+        return screens
+    if len(set(selected_names)) != len(selected_names):
+        raise ValueError("--check names must not be repeated")
+    unknown_checks = [name for name in selected_names if name not in screens]
+    if unknown_checks:
+        raise ValueError("unknown check name(s): " + ", ".join(unknown_checks))
+    selected = set(selected_names)
+    return {name: check for name, check in screens.items() if name in selected}
+
+
 # ---- Momentum ----
 @screen("6m momentum leader (vs SPY)", "momentum")
 def _(c, b):
@@ -805,9 +818,13 @@ def theme_rotation(batch_size=8, pause_seconds=15):
 
 
 def main():
+    global SCREENS
     ap = argparse.ArgumentParser()
     ap.add_argument("--universe", default=UNIVERSE_FILE if os.path.isfile(UNIVERSE_FILE) else None)
     ap.add_argument("--top", type=int, default=30)
+    ap.add_argument("--check", action="append", default=[],
+                    help="run only this registered check; repeat to select multiple")
+    ap.add_argument("--result-json", help="write a machine-readable ranking for the CLI dashboard")
     ap.add_argument("--workers", type=int, choices=(1, 2), default=1,
                     help="parallel ticker fetches; 1 is safest for Yahoo (default: 1)")
     ap.add_argument("--batch-size", type=int, default=8,
@@ -819,6 +836,10 @@ def main():
         ap.error("--top must be at least 1")
     if args.batch_size < 1:
         ap.error("--batch-size must be at least 1")
+    try:
+        SCREENS = filter_screens(SCREENS, args.check)
+    except ValueError as exc:
+        ap.error(str(exc))
 
     universe = load_universe(args.universe)
     universe_syms = [t for t, _, _ in universe]
@@ -962,11 +983,13 @@ def main():
     today = date.today().isoformat()
     _append_rotation(today, rotation_by_theme)
 
-    _write_note(
+    report_path = _write_note(
         today, markdown_rows, screen_hits, rotation_by_theme, universe_syms,
         screen_outcomes, data, universe_label, args.top, len(data_errors), len(screen_errors),
     )
     _print_summary(markdown_rows, rotation_by_theme, args.top)
+    if args.result_json:
+        _write_result_json(args.result_json, markdown_rows, args.top, report_path, data)
 
 
 def _append_rotation(today, rotation_by_theme):
@@ -1061,7 +1084,7 @@ def _write_note(
     os.makedirs(KG_NOTES, exist_ok=True)
     topn = rows[:top_count]
     companies = []
-    tmap = kg_links.load_ticker_map()
+    tmap = kg_links.load_ticker_map(KG_ROOT)
     for sym, _name, _theme, _hits in topn:
         companies.append(kg_links.company_link(sym, tmap))
     names_hit = sum(1 for _sym, _name, _theme, hits in rows if hits)
@@ -1099,7 +1122,7 @@ def _write_note(
         cats = sorted({SCREENS[h][0] for h in hits})
         covered = sum(screen_outcomes[name].get(sym) is not None for name in core_screens)
         coverage = f"{covered}/{len(core_screens)}"
-        link = kg_links.company_link(sym)
+        link = kg_links.company_link(sym, tmap)
         body.append(
             f"| {i} | {link} | {family_breadth(hits)} | {len(hits)} | {coverage} | {', '.join(cats)} |"
         )
@@ -1151,6 +1174,50 @@ def _write_note(
     with open(title, "w", encoding="utf-8") as f:
         f.write(front + "\n".join(body) + "\n")
     print("wrote", title)
+    return title
+
+
+def _write_result_json(path, rows, top_count, report_path, data=None):
+    contexts = data or {}
+    top = []
+    for rank, (ticker, name, _theme, hits) in enumerate(rows[:top_count], 1):
+        display_name = name
+        if not display_name or display_name.strip().casefold() == ticker.casefold():
+            context = contexts.get(ticker)
+            info = context.info if context is not None else {}
+            for key in ("longName", "shortName"):
+                candidate = info.get(key) if isinstance(info, dict) else None
+                if isinstance(candidate, str) and candidate.strip():
+                    display_name = candidate.strip()
+                    break
+        if not display_name:
+            display_name = ticker
+        top.append({
+            "rank": rank,
+            "ticker": ticker,
+            "name": display_name,
+            "detail": f"{family_breadth(hits)}/5 signal families, {len(hits)} raw checks",
+        })
+    payload = {
+        "summary": f"{len(top)} names ranked by signal-family breadth across {len(SCREENS)} checks",
+        "report_path": str(report_path),
+        "top": top,
+    }
+    absolute_path = os.path.abspath(path)
+    os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=os.path.dirname(absolute_path),
+            prefix=".meta-screen-", suffix=".tmp", delete=False,
+        ) as handle:
+            temporary_path = handle.name
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        os.replace(temporary_path, absolute_path)
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.unlink(temporary_path)
 
 
 def _print_summary(rows, rotation_by_theme, top_count):

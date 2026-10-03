@@ -58,7 +58,8 @@ def get_frontmatter(path):
 def load_ticker_map(root=KG_ROOT):
     """ticker -> company-note title (filename sans .md)."""
     tmap = {}
-    for path in glob.glob(os.path.join(COMPANIES_DIR, "*.md")):
+    companies_dir = os.path.join(os.fspath(root), "Companies")
+    for path in glob.glob(os.path.join(companies_dir, "*.md")):
         fm = get_frontmatter(path)
         ticker = (fm.get("ticker") or "").strip().upper()
         if ticker:
@@ -69,7 +70,7 @@ def load_ticker_map(root=KG_ROOT):
 def company_link(sym, ticker_map=None):
     """Return [[CompanyTitle]] for a ticker, or the bare ticker if unresolved."""
     sym = sym.strip().upper()
-    tmap = ticker_map or load_ticker_map()
+    tmap = load_ticker_map() if ticker_map is None else ticker_map
     title = tmap.get(sym)
     if title:
         return f"[[{title}]]"

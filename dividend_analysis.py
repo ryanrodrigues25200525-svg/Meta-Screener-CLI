@@ -5,7 +5,7 @@ Usage: python3 dividend_analysis.py
 Reads: ~/finance-ai/pm_portfolio.json
 Writes: ~/Documents/Finance Knowledge Graph/Notes/<today> Dividend-Analysis.md
 """
-import os, sys, json
+import os, sys, json, tempfile
 from datetime import date
 from yahoo_guard import raise_if_yahoo_rate_limit
 
@@ -58,7 +58,43 @@ def analyze(tickers):
     return results
 
 
-def write_note(today, data):
+def build_result_payload(data, report_path):
+    ranked = sorted(data, key=lambda row: row.get("yield") or 0, reverse=True)[:10]
+    top = []
+    for rank, row in enumerate(ranked, 1):
+        payout = "n/a" if row.get("payout") is None else f"{row['payout']}%"
+        top.append({
+            "rank": rank,
+            "ticker": row["ticker"],
+            "name": row["ticker"],
+            "detail": f"Yield {row.get('yield') or 0}%; annual rate ${row.get('rate') or 0}; payout {payout}",
+        })
+    return {
+        "summary": f"{len(top)} names ranked by dividend yield",
+        "report_path": str(report_path),
+        "top": top,
+    }
+
+
+def write_result_json(path, payload):
+    absolute_path = os.path.abspath(path)
+    os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=os.path.dirname(absolute_path),
+            prefix=".dividend-analysis-", suffix=".tmp", delete=False,
+        ) as handle:
+            temporary_path = handle.name
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        os.replace(temporary_path, absolute_path)
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.unlink(temporary_path)
+
+
+def write_note(today, data, result_json_path=None):
     os.makedirs(KG_NOTES, exist_ok=True)
     lines = [
         "---",
@@ -73,19 +109,24 @@ def write_note(today, data):
         "| Ticker | Yield % | Annual $/share | Payout % |",
         "|--------|---------|----------------|----------|",
     ]
-    for d in sorted(data, key=lambda x: x["yield"], reverse=True):
+    ranked = sorted(data, key=lambda x: x["yield"], reverse=True)
+    for d in ranked:
         payout = f'{d["payout"]}%' if d["payout"] else "N/A"
         lines.append(f"| {d['ticker']} | {d['yield']}% | ${d['rate']} | {payout} |")
     path = os.path.join(KG_NOTES, f"{today} Dividend-Analysis.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     print(f"Wrote {path}")
+    if result_json_path:
+        write_result_json(result_json_path, build_result_payload(ranked, path))
+    return path
 
 
 def main():
     import argparse as _ap
     _p = _ap.ArgumentParser()
     _p.add_argument("--income-portfolio", action="store_true", help="limit to dividend-paying portfolio names")
+    _p.add_argument("--result-json", help="write the ranked rows for the CLI dashboard")
     _a, _ = _p.parse_known_args()
     today = date.today().isoformat()
     tickers = load_holdings()
@@ -96,7 +137,7 @@ def main():
     data = analyze(tickers)
     if income_only:
         data = [r for r in data if r["yield"] > 0]
-    write_note(today, data)
+    write_note(today, data, _a.result_json)
     print(f"Analyzed {len(data)} tickers")
 
 
