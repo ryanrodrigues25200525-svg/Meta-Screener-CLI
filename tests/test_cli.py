@@ -255,6 +255,21 @@ class IdValidationTests(unittest.TestCase):
             with self.subTest(good=good):
                 self._assert_id_validity(good, True)
 
+    def test_plan_mentions_result_wiring(self):
+        registry = one_screener_registry()
+        registry["screeners"][0].update({"id": "meta-overlap", "yahoo": True})
+        args = cli.build_parser().parse_args(
+            ["plan", "--screener", "meta-overlap"]
+        )
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            cli.plan_command(registry, args)
+        out = buf.getvalue()
+        self.assertTrue(
+            "--result-json" in out or "json" in out.lower() and "result" in out.lower(),
+            f"plan output should mention result wiring:\n{out}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

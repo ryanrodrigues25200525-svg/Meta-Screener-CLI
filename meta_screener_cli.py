@@ -268,6 +268,7 @@ def plan_command(registry: dict[str, Any], args: argparse.Namespace) -> int:
             print(f"  stage cooldown: {args.gap_seconds}s")
         print()
     print("The default run is sequential. It does not place trades.")
+    print("Note: json-events runs add --result-json/--top/--csv-out for ranked workflows.")
     return 0
 
 
