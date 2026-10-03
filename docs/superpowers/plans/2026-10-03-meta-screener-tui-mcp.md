@@ -72,6 +72,7 @@
 - [ ] Add keyboard navigation, selection toggles, run selected, run all, details, and clean quit/terminal cleanup.
 - [ ] Launch the Python CLI as a child process using the passed interpreter; consume JSON Lines incrementally, show progress, and prevent overlapping runs.
 - [ ] Render rankings only from `top` result rows; show an honest summary or report path for non-ranking workflows.
+- [ ] Load the latest valid compact run record from `.meta-screener/runs/` at startup so results remain visible after closing and reopening the TUI; never auto-run during startup.
 - [ ] Add optional foreground daily refresh, disabled by default, with no background process and no catch-up burst.
 - [ ] Lock dependencies and document the Bun install command in `tui/README.md` or the root README assigned to Task 1 only if the root agent explicitly accepts a separate handoff.
 - [ ] Run focused Bun tests and inspect a real terminal session at normal and narrow widths.
@@ -99,6 +100,7 @@
 - [ ] Run the real default-universe `meta-overlap` workflow from the TUI through JSON Lines with one worker, the CLI defaults of batch size 8 and a 15-second pause. Set `FINANCE_KG_ROOT` to a temporary directory; capture the actual ticker ranking, check it matches the saved JSON result, and stop immediately if Yahoo returns a rate limit.
 - [ ] Launch MCP over stdio and confirm the tool list and registry operations work against an isolated copy of `screeners.json`.
 - [ ] Inspect final TUI behavior at normal and narrow widths, status/error handling, terminal cleanup, docs, changelog, version files, and final Git diff.
+- [ ] Reopen the TUI after the live run and confirm it displays the same saved ranking without launching a new Yahoo run.
 - [ ] Commit coherent changes to `codex/meta-screener-polish`, push the feature branch, and open a PR for user review. Do not merge to `main`; only create/push a `v0.3.0` tag if the user confirms the PR is ready to release.
 
 ## Execution
