@@ -326,6 +326,10 @@ class AtomicWriteTests(RegistryTestCase):
 
 
 class ServerSurfaceTests(unittest.TestCase):
+    @unittest.skipUnless(
+        __import__("importlib").util.find_spec("mcp") is not None,
+        "requires optional mcp extra: pip install 'meta-screener-cli[mcp]'",
+    )
     def test_server_exposes_required_tools(self) -> None:
         server = screener_mcp.build_server()
         tools = asyncio.run(server.list_tools())
