@@ -35,8 +35,10 @@ Make the repository an understandable home for the existing Python screeners and
 
 - Add a Bun/TypeScript frontend under `tui/` using OpenTUI Core. The Python entry point launches Bun for the no-argument path and passes the active Python interpreter to the UI so child runs use the same environment.
 - Use a restrained dark palette, clear hierarchy, compact status badges, and bordered panels: grouped workflow navigation on the left, selected workflow details and recent results on the right, and a keyboard-help/status footer.
-- Support keyboard navigation and selection, one-screen and multi-screen runs, run-all, run status/progress, result inspection, and clean quit/terminal restoration. Provide a readable narrow-terminal layout.
-- Offer periodic refresh as an opt-in foreground setting with a conservative 24-hour interval. It never starts a background service or catches up missed runs; an active run must finish before another starts.
+- Preserve registry order between visible rows and keyboard focus. Preselect only the first default-enabled workflow (`meta-overlap`); allow selecting more, and keep a separate run-all action.
+- Support keyboard navigation, one-screen and multi-screen runs, run status/progress, result inspection, and clean quit/terminal restoration. Provide a readable narrow-terminal layout.
+- Load the latest valid compact run summary from `.meta-screener/runs/` at startup without executing any screener.
+- Offer periodic refresh as an opt-in foreground setting for the current selection with a conservative 24-hour interval. It never starts a background service or catches up missed runs; an active run must finish before another starts.
 - If Bun or the UI dependencies are unavailable, print a direct setup instruction. Explicit Python CLI subcommands remain usable without Bun.
 
 ### MCP server
