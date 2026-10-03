@@ -196,6 +196,13 @@ def grade_performance(root=KG_ROOT):
 # Upcoming catalysts — Important Dates calendar
 # ---------------------------------------------------------------------------
 def upcoming_catalysts(root=KG_ROOT, folder="Important Dates", from_days=0, horizon_days=45):
+    """DEPRECATED: local Important-Dates calendar read.
+
+    Kept only for legacy callers (reason.py, pm_trader.py). New code must
+    use Yahoo earnings dates via ``yahoo_client.get_earnings_dates`` (see
+    ``catalyst_scan.py``): only events Yahoo supplies are listed, with no
+    fallback to local notes.
+    """
     today = date.today()
     events = []
     for path in glob.glob(os.path.join(root, folder, "*.md")):

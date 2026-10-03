@@ -20,3 +20,13 @@ GROWTH_TICKERS = """
 MU NVDA TSM WDC LITE AVGO AMD MRVL SNDK
 VTRS HPQ GM VALE PFE NVO ADBE PBR AAPL MSFT
 """.split()
+
+# Shared default for the holdings/analyst screens (short interest, dividend,
+# options activity, analyst consensus). Symbol-selection input only:
+# membership implies nothing about a company; every fact comes from Yahoo.
+# Includes broad large-caps plus dividend payers so yield screens measure
+# something. An explicit --tickers list always overrides this.
+HOLDINGS_TICKERS = """
+AAPL MSFT NVDA AMZN GOOGL META AVGO AMD JPM XOM
+VZ JNJ KO PG CVX PEP MMM T
+""".split()

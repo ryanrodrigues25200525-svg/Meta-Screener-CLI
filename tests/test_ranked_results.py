@@ -61,7 +61,7 @@ class RankedResultTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             notes_dir = Path(temp_dir) / "Notes"
             result_path = Path(temp_dir) / "short-interest.json"
-            with patch.object(short_interest, "KG_NOTES", str(notes_dir)):
+            with patch.object(short_interest, "NOTES_DIR", str(notes_dir)):
                 note_path = short_interest.write_note("2026-10-03", rows, str(result_path))
             result = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertTrue(Path(note_path).is_file())
@@ -90,7 +90,7 @@ class RankedResultTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             notes_dir = Path(temp_dir) / "Notes"
             result_path = Path(temp_dir) / "dividend-analysis.json"
-            with patch.object(dividend_analysis, "KG_NOTES", str(notes_dir)):
+            with patch.object(dividend_analysis, "NOTES_DIR", str(notes_dir)):
                 note_path = dividend_analysis.write_note("2026-10-03", rows, str(result_path))
             result = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertTrue(Path(note_path).is_file())

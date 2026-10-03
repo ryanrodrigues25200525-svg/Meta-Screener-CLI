@@ -4,7 +4,8 @@ This module is the ONLY allowed path for Yahoo Finance data in this repo.
 Do not call ``yfinance.Ticker`` (``yf.Ticker``) directly from any screener
 or helper script — always go through :class:`YahooClient` or the
 module-level ``get_history`` / ``get_info`` / ``get_financials`` /
-``get_earnings_dates`` / ``get_news`` helpers below.
+``get_earnings_dates`` / ``get_news`` / ``get_options`` /
+``get_option_chain`` helpers below.
 
 Rules (global constraints):
 - All fetches are serialized through one process-wide ``threading.Lock``.
@@ -96,6 +97,17 @@ def _default_provider(ticker: str, op: str = "info", **kwargs: Any) -> Any:
         return stock.get_earnings_dates(limit=kwargs.get("limit", 12))
     if op == "news":
         return stock.news
+    if op == "options":
+        expirations = stock.options
+        return list(expirations) if expirations else []
+    if op == "option_chain":
+        chain = stock.option_chain(date=kwargs.get("expiry"))
+        calls = getattr(chain, "calls", None)
+        puts = getattr(chain, "puts", None)
+        if isinstance(chain, dict):
+            calls = chain.get("calls", calls)
+            puts = chain.get("puts", puts)
+        return {"calls": calls, "puts": puts}
     raise ValueError(f"Unknown Yahoo op: {op}")
 
 
@@ -142,6 +154,14 @@ class YahooClient:
 
     def get_news(self, ticker: str) -> list[dict]:
         return self._fetch("news", ticker)
+
+    def get_options(self, ticker: str) -> list:
+        """Listed option expiration dates for one ticker (possibly empty)."""
+        return self._fetch("options", ticker)
+
+    def get_option_chain(self, ticker: str, expiry: Any = None) -> dict:
+        """Option chain for one ticker/expiry as ``{"calls": df, "puts": df}``."""
+        return self._fetch("option_chain", ticker, expiry=expiry)
 
     # -- internals -----------------------------------------------------
     def _fetch(self, op: str, ticker: str, **kwargs: Any) -> Any:
@@ -228,3 +248,11 @@ def get_earnings_dates(ticker: str, limit: int = 12) -> pd.DataFrame:
 
 def get_news(ticker: str) -> list[dict]:
     return _shared_client().get_news(ticker)
+
+
+def get_options(ticker: str) -> list:
+    return _shared_client().get_options(ticker)
+
+
+def get_option_chain(ticker: str, expiry: Any = None) -> dict:
+    return _shared_client().get_option_chain(ticker, expiry=expiry)

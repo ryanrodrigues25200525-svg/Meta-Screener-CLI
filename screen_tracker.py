@@ -2,74 +2,86 @@
 """
 screen_tracker.py — Meta-Screen tracker workbook (Trackers.xlsx).
 
-Reads EVERY Meta-Screen run from the KG (Notes/<date> Meta-Screen.md — all
-historical + every future weekly run), resolves each flagged name to a ticker,
-computes each pick's return SINCE THE FLAG DATE and vs SPY (yfinance), and
-writes a 3-sheet workbook with officecli:
+Reads EVERY prior Meta-Screen run note (screen outputs, not research
+inputs), resolves each flagged ticker symbol, computes each pick's return
+SINCE THE FLAG DATE and vs SPY (Yahoo Finance via yahoo_client, the only
+allowed Yahoo path), and writes a multi-sheet workbook.
 
-  Picks   — one row per (run, name): date, rank, ticker, screens, price@flag, return since, vs SPY
-  Summary — one row per ticker: first seen, times flagged, price@first, total return, vs SPY
-  Runs    — one row per run: date, names flagged, cohort avg return + vs SPY
+This is an outcome tracker, not a candidate screener: it reports measured
+returns only and invents no rankings.
 
 Usage:
-  python3 screen_tracker.py                       # -> KG root / Trackers.xlsx
+  python3 screen_tracker.py                       # -> notes dir / Trackers.xlsx
   python3 screen_tracker.py --out /path/Trackers.xlsx
   python3 screen_tracker.py --dry                 # print tables, no xlsx
 
-Requires: yfinance; officecli (for the xlsx step) at ~/.local/bin/officecli
-or on PATH.
+Requires: yfinance (via yahoo_client); officecli (for the xlsx step) at
+~/.local/bin/officecli or on PATH.
 """
 import argparse, glob, json, os, re, shutil, subprocess, sys, tempfile, time
 from datetime import date, datetime
-from yahoo_guard import raise_if_yahoo_rate_limit
 
 FINANCE_AI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, FINANCE_AI)
 
-try:
-    import yfinance as yf
-except Exception as e:
-    print("FATAL: need yfinance:", e)
-    sys.exit(1)
+
+def _default_notes_dir():
+    override = os.environ.get("SCREEN_NOTES_DIR")
+    if override:
+        return override
+    legacy = os.environ.get("FINANCE_KG_ROOT")
+    if legacy:
+        return os.path.join(legacy, "Notes")
+    return os.path.join(FINANCE_AI, "reports", "Notes")
 
 
-def _first_dir(*paths):
-    for p in paths:
-        if os.path.isdir(p):
-            return p
-    return paths[0]
-
-
-KG_ROOT = os.environ.get("FINANCE_KG_ROOT") or _first_dir(
-    "/documents/Finance Knowledge Graph",
-    os.path.expanduser("~/Documents/Finance Knowledge Graph"),
-)
-KG_NOTES = os.path.join(KG_ROOT, "Notes")
-DEFAULT_OUT = os.path.join(KG_ROOT, "Trackers.xlsx")
+KG_NOTES = _default_notes_dir()
+DEFAULT_OUT = os.path.join(os.path.dirname(KG_NOTES), "Trackers.xlsx")
 
 ROW_RE = re.compile(r"^\|\s*(\d+)\s*\|\s*(.+?)\s*\|\s*(\d+)\s*\|\s*(.*?)\s*\|\s*$")
 
 
-def resolve_ticker(token, title_map):
-    """[[NVIDIA]] / NVIDIA / XOM / [[Marathon Petroleum]] -> ticker (best effort)."""
+def _client_for(provider):
+    """Return a YahooClient-compatible object (injected stub or live client)."""
+    if provider is None:
+        import yahoo_client
+        return yahoo_client
+    if hasattr(provider, "get_history"):
+        return provider
+    if callable(provider):
+        from yahoo_client import YahooClient
+        return YahooClient(provider=provider)
+    raise TypeError("provider must be a YahooClient, a stub with "
+                    "get_history, or a provider callable")
+
+
+def resolve_ticker(token, title_map=None):
+    """Ticker-style symbol -> (TICKER, display); anything else is blank.
+
+    Only unambiguous ticker-style tokens resolve (e.g. ``AAPL``, ``BRK.B``).
+    Former company-name lookups against local company notes are gone: names
+    that are not ticker-style return (None, display) and skip price lookup
+    rather than guessing.
+    """
     t = token.strip()
     t = re.sub(r"^\[\[|\]\]$", "", t).strip()
     if not t:
         return None, None
     display = t
-    # name/title match first (catches "NVIDIA" -> NVDA, "Marathon Petroleum" -> MPC)
-    hit = title_map.get(t.lower())
-    if hit:
-        return hit, display
+    if title_map:
+        hit = title_map.get(t.lower())
+        if hit:
+            return hit, display
     # all-caps short token = ticker-style
     if re.fullmatch(r"[A-Z0-9.\-]{1,6}", t) and t.upper() == t:
         return t, display
-    return t, display  # unresolved name; price lookup will be skipped
+    return None, display  # unresolved name; price lookup will be skipped
 
 
-def load_meta_runs():
+def load_meta_runs(notes_dir=None):
+    notes_dir = notes_dir or KG_NOTES
     runs = []
-    for p in sorted(glob.glob(os.path.join(KG_NOTES, "*Meta-Screen.md"))):
+    for p in sorted(glob.glob(os.path.join(notes_dir, "*Meta-Screen.md"))):
         base = os.path.basename(p)
         m = re.match(r"(\d{4}-\d{2}-\d{2})", base)
         if not m:
@@ -319,25 +331,7 @@ def main():
     args = ap.parse_args()
 
     title_map = {}
-    # primary: scan the vault's Companies dir directly (self-contained, no resolver dependency)
-    comp_dir = os.path.join(KG_ROOT, "Companies")
-    for p in sorted(glob.glob(os.path.join(comp_dir, "*.md"))):
-        stem = os.path.splitext(os.path.basename(p))[0]
-        try:
-            head = open(p, encoding="utf-8", errors="replace").read(1500)
-        except Exception:
-            continue
-        m = re.search(r'^ticker:\s*"?([A-Za-z0-9.\-]+)"?', head, re.M)
-        if m and m.group(1):
-            title_map.setdefault(stem.lower(), m.group(1).upper())
-    # merge kg_links map if available (belt and braces)
-    try:
-        import kg_links
-        for tk, ti in (kg_links.load_ticker_map() or {}).items():
-            title_map.setdefault(str(ti).lower(), str(tk).upper())
-    except Exception:
-        pass
-    print(f"title map entries: {len(title_map)}")
+    print(f"title map entries: {len(title_map)} (ticker-style symbols only; no local company-note lookups)")
 
     runs = load_meta_runs()
     if not runs:
@@ -361,17 +355,19 @@ def main():
             picks.append({"date": d, "rank": rank, "token": token, "ticker": tk,
                           "display": disp, "screens": screens, "cats": cats})
 
-    # ---- price history (one fetch per ticker + SPY) ----
+    # ---- price history (one fetch per ticker + SPY, via yahoo_client) ----
     print(f"resolving prices for {len(tickers)} tickers + SPY ...")
     closes = {}
+    client = _client_for(None)
 
     def fetch(sym):
         try:
-            h = yf.Ticker(sym).history(period="6mo", auto_adjust=False)
+            h = client.get_history(sym, period="6mo")
             s = h["Close"].dropna()
             return s
-        except Exception as exc:
-            raise_if_yahoo_rate_limit(exc, f"screen-history price fetch for {sym}")
+        except RuntimeError:
+            raise
+        except Exception:
             return None
 
     spy = fetch("SPY")

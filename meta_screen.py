@@ -16,7 +16,8 @@ Usage:
     python3 meta_screen.py [--universe universe.csv] [--top N]
         [--workers 1..4] [--batch-size N] [--batch-pause-seconds 10..30]
 
-Writes: ~/Documents/Finance Knowledge Graph/Notes/<today> Meta-Screen.md
+Writes: run-record note to the notes dir (see KG_NOTES below; local
+``reports/Notes`` unless FINANCE_KG_ROOT points at an existing vault).
 Also updates this repo's rotation_history.csv (run record)
 """
 import os, sys, csv, json, argparse, tempfile, time
@@ -27,19 +28,18 @@ import numpy as np
 
 import yahoo_client  # noqa: E402  (only allowed Yahoo path)
 
-def _first_dir(*paths):
-    for p in paths:
-        if os.path.isdir(p):
-            return p
-    return paths[0]
-
-
-KG_ROOT = os.environ.get("FINANCE_KG_ROOT") or _first_dir(
-    "/documents/Finance Knowledge Graph",
-    os.path.expanduser("~/Documents/Finance Knowledge Graph"),
-)
-KG_NOTES = os.path.join(KG_ROOT, "Notes")
 FINANCE_AI = os.path.dirname(os.path.abspath(__file__))
+
+
+def _default_kg_root():
+    configured = os.environ.get("FINANCE_KG_ROOT")
+    if configured:
+        return configured
+    return os.path.join(FINANCE_AI, "reports")
+
+
+KG_ROOT = _default_kg_root()
+KG_NOTES = os.path.join(KG_ROOT, "Notes")
 ROTATION_CSV = os.path.join(FINANCE_AI, "rotation_history.csv")
 
 # Default curated universe (ticker, name, theme): symbol-selection input
@@ -1156,7 +1156,7 @@ def _write_note(
 ):
     """Write the run-record note. Tickers are plain symbols (no KG links).
 
-    ``notes_dir`` defaults to the Finance Knowledge Graph Notes folder;
+    ``notes_dir`` defaults to the local run-record notes folder (KG_NOTES);
     tests may inject a temp directory.
     """
     notes_dir = notes_dir or KG_NOTES
