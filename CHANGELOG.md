@@ -28,7 +28,7 @@ agents manage and run registered screens.
 
 ### Changed
 
-- Planned: `VERSION` and package metadata advance to 0.3.0 at integration
-  time; `pyproject.toml` alignment stays with the integration task.
+- `VERSION` is now 0.3.0; package metadata / `pyproject.toml` alignment
+  stays with the integration task.
 - README links the new catalog and states the registry holds 17 workflows
   with 16 enabled by default (`screen-history` is optional).
