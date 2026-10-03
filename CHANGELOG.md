@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Breaking: bare `metascreener` now launches the OpenTUI dashboard (previously ran `meta-overlap`).
 - Version metadata aligned at 0.3.0: `VERSION`, `pyproject.toml`
   (`meta-screener-cli`, `requires-python >= 3.10`, `metascreener`, `meta-screener`, and
   `meta-screener-mcp` console scripts, `mcp` extra), `screeners.json`

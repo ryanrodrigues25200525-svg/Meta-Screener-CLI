@@ -5,7 +5,7 @@ import { loadLatestSavedRun } from "./history.js";
 import { groupByStage, orderedScreeners, SelectionModel } from "./registry.js";
 import { markRunStarted, shouldAutoRefresh, toggleRefresh, type RefreshSettings } from "./refresh.js";
 import { startRunner, type ActiveRun } from "./runner.js";
-import { NARROW_WIDTH, buildRunnerCommand, resolveRuntime } from "./runtime.js";
+import { NARROW_WIDTH, resolveRuntime } from "./runtime.js";
 import type { DashboardRunState, Registry } from "./types.js";
 
 const DARK = {
@@ -274,11 +274,7 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
         return;
       case "return":
       case "r":
-        if (key.shift) {
-          void launch(orderedScreeners(opts.registry).filter((s) => s.default_enabled !== false).map((s) => s.id));
-        } else {
-          void launch(selection.selectedIds());
-        }
+        void launch(selection.selectedIds());
         return;
       case "R":
         void launch(orderedScreeners(opts.registry).filter((s) => s.default_enabled !== false).map((s) => s.id));
@@ -306,9 +302,6 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
     destroyed = true;
     clearInterval(timer);
   });
-
-  // Keep argv visible for debugging without leaking a shell string.
-  void buildRunnerCommand;
 
   paint();
   await new Promise(() => {

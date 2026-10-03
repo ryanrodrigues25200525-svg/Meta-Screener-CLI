@@ -12,11 +12,6 @@ export function loadRegistryFile(path: string): Registry {
   return parseRegistry(readFileSync(path, "utf-8"));
 }
 
-export async function loadRegistry(path: string): Promise<Registry> {
-  const text = await Bun.file(path).text();
-  return parseRegistry(text);
-}
-
 export function parseRegistry(text: string): Registry {
   const data = JSON.parse(text) as Registry;
   if (!Array.isArray(data.stages) || !Array.isArray(data.screeners)) {
