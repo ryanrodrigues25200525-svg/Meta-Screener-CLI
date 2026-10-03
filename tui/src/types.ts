@@ -53,7 +53,7 @@ export interface ScreenerStartedEvent extends BaseEvent {
 
 export interface OutputLineEvent extends BaseEvent {
   type: "output_line";
-  screener_id: string;
+  screener_id?: string | null;
   line: string;
 }
 

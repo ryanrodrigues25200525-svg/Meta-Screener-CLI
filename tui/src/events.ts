@@ -75,6 +75,7 @@ export function applyEvent(state: DashboardRunState, event: RunEvent): Dashboard
       return state;
     }
     case "output_line": {
+      if (typeof event.screener_id !== "string" || event.screener_id.length === 0) return state;
       const entry = ensureEntry(state, event.screener_id);
       pushLog(entry, event.line);
       return state;

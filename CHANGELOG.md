@@ -68,6 +68,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `kg_links.company_link` now honors an explicitly supplied empty ticker map
-  instead of falling back to the user's default Finance Knowledge Graph index,
-  keeping isolated runs within their configured data root.
+- KG link helpers honor an explicitly supplied empty ticker map instead of
+  falling back to the user's default Finance Knowledge Graph index, keeping
+  isolated runs within their configured data root.
+- Ranked-result adapters identify built-in screens from canonical repository
+  paths, so a valid `./rotation_screen.py` registry entry still exports its
+  ranking.
+- The dashboard ignores run-level output lines that have no screener ID,
+  rather than creating a phantom screener log entry for stage cooldowns.

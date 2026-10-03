@@ -84,4 +84,18 @@ describe("JSON event handling", () => {
     expect(state.byScreener["x"]!.log.length).toBe(200);
     expect(state.byScreener["x"]!.log.at(-1)).toBe("l249");
   });
+
+  test("run-level output does not create a fake screener entry", () => {
+    const state = blankRunState();
+    const event = parseEventLine(JSON.stringify({
+      type: "output_line",
+      run_id: "r1",
+      screener_id: null,
+      line: "Stage cooldown: waiting 15s.",
+    }));
+
+    expect(event?.type).toBe("output_line");
+    if (event) applyEvent(state, event);
+    expect(state.byScreener).toEqual({});
+  });
 });

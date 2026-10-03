@@ -29,6 +29,13 @@ class TickerMapTests(unittest.TestCase):
 
         self.assertEqual(result, "EXM")
 
+    def test_resolve_company_links_respects_an_explicit_empty_map_without_fallback(self):
+        with patch.object(kg_links, "load_ticker_map", return_value={"EXM": "Default Company"}) as load:
+            result = kg_links.resolve_company_links(["EXM"], {})
+
+        load.assert_not_called()
+        self.assertEqual(result, ["[[EXM]]"])
+
 
 if __name__ == "__main__":
     unittest.main()

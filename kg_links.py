@@ -79,7 +79,7 @@ def company_link(sym, ticker_map=None):
 
 def resolve_company_links(companies_list, ticker_map=None):
     """Map a list of raw tickers/company titles to [[wikilinks]] via the map."""
-    tmap = ticker_map or load_ticker_map()
+    tmap = load_ticker_map() if ticker_map is None else ticker_map
     out = []
     for c in companies_list or []:
         c = c.strip().strip("[]")

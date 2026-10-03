@@ -192,6 +192,23 @@ class ResultTests(unittest.TestCase):
         self.assertEqual(result["top"], [])
         self.assertIn("ticker is required", result["result_error"])
 
+    def test_ranked_workflow_recognizes_dot_slash_registry_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            result_dir = root / "results"
+            (root / "rotation_screen.py").write_text("# workflow\n", encoding="utf-8")
+            screener = {"id": "rotation", "file": "./rotation_screen.py", "args": [], "yahoo": False}
+
+            with patch.object(cli, "ROOT", root):
+                command = cli.command_for(screener, "python", 1, 8, 15, result_dir)
+                artifact = cli.result_artifact_for(screener, result_dir)
+
+        self.assertEqual(command[-4:], [
+            "--csv-out", str(result_dir / "rotation.csv"),
+            "--result-json", str(result_dir / "rotation.json"),
+        ])
+        self.assertEqual(artifact, result_dir / "rotation.json")
+
     def test_custom_profile_arguments_are_passed_without_shell_joining(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

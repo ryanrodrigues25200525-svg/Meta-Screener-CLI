@@ -25,11 +25,10 @@ The `mcp` extra installs `mcp>=2,<3` and provides the binary:
 # meta-screener-mcp = "screener_mcp:main"
 ```
 
-Verify:
+Verify the server is configured, then invoke `list_screeners` from OpenCode:
 
 ```bash
-meta-screener-mcp --help
-# or: python screener_mcp.py
+opencode mcp list
 ```
 
 The server runs over local stdio transport (`build_server().run("stdio")` in `screener_mcp.py`).

@@ -60,7 +60,7 @@ Make the repository an understandable home for the existing Python screeners and
 
 - Add focused Python tests for registry validation, safe screen creation/removal, structured runner events, and result parsing; add Bun tests for selection, event handling, and narrow-terminal rendering where practical.
 - Run the Python and Bun test suites and static checks.
-- Run one real `meta-overlap` screener through the dashboard with one worker, 25-symbol batches, and the existing 10-second cooldown. Set `FINANCE_KG_ROOT` to a temporary directory so the test does not write into the user's Finance Knowledge Graph. Keep the generated `rotation_history.csv` and run summaries inside the isolated worktree or its ignored run-data directory.
+- Run one real `meta-overlap` screener through the dashboard with one worker, 8-symbol batches, and a 15-second cooldown. Set `FINANCE_KG_ROOT` to a temporary directory so the test does not write into the user's Finance Knowledge Graph. Keep the generated `rotation_history.csv` and run summaries inside the isolated worktree or its ignored run-data directory.
 - If Yahoo reports a rate limit, stop immediately and report the run as incomplete; do not retry automatically.
 - Inspect the final Git diff and confirm the original checkout and its untracked `.DS_Store` remain untouched.
 

@@ -152,8 +152,9 @@ def command_for(
         raise ValueError(f"Screener path escapes this folder: {screener['file']}")
     if not script.is_file() or script.suffix != ".py":
         raise ValueError(f"Screener script is missing or not Python: {screener['file']}")
+    relative_file = script.relative_to(ROOT).as_posix()
     command = [python, str(script), *screener.get("args", [])]
-    if screener["file"] == "meta_screen.py":
+    if relative_file == "meta_screen.py":
         command.extend([
             "--workers", str(workers),
             "--batch-size", str(batch_size),
@@ -161,12 +162,12 @@ def command_for(
         ])
         if result_dir is not None:
             command.extend(["--top", "10", "--result-json", str(result_dir / f"{screener['id']}.json")])
-    elif screener["file"] == "rotation_screen.py" and result_dir is not None:
+    elif relative_file == "rotation_screen.py" and result_dir is not None:
         command.extend([
             "--csv-out", str(result_dir / f"{screener['id']}.csv"),
             "--result-json", str(result_dir / f"{screener['id']}.json"),
         ])
-    elif screener["file"] in {"short_interest.py", "dividend_analysis.py"} and result_dir is not None:
+    elif relative_file in {"short_interest.py", "dividend_analysis.py"} and result_dir is not None:
         command.extend(["--result-json", str(result_dir / f"{screener['id']}.json")])
     elif screener.get("batchable"):
         command.extend([
@@ -332,7 +333,14 @@ def run_process(
 
 
 def result_artifact_for(screener: dict[str, Any], result_dir: Path) -> Path | None:
-    if screener["file"] in {
+    file_value = screener.get("file")
+    if not isinstance(file_value, str) or Path(file_value).is_absolute():
+        return None
+    script = (ROOT / file_value).resolve()
+    if not script.is_relative_to(ROOT):
+        return None
+    relative_file = script.relative_to(ROOT).as_posix()
+    if relative_file in {
         "meta_screen.py", "rotation_screen.py", "short_interest.py", "dividend_analysis.py"
     }:
         return result_dir / f"{screener['id']}.json"
