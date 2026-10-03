@@ -164,6 +164,51 @@ class JsonEventTests(unittest.TestCase):
             self.assertEqual(record["run_id"], events[0]["run_id"])
             self.assertEqual(record["screeners"][0]["status"], "ok")
 
+    def test_result_error_respects_continue_on_error(self):
+        def two_screener_registry():
+            reg = one_screener_registry()
+            second = dict(reg["screeners"][0])
+            second["id"] = "second"
+            second["name"] = "Second"
+            reg["screeners"].append(second)
+            return reg
+
+        args = argparse.Namespace(
+            all=False,
+            stage=None,
+            screener=["demo", "second"],
+            gap_seconds=10,
+            workers=1,
+            batch_size=25,
+            python=sys.executable,
+            continue_on_error=True,
+            json_events=True,
+        )
+        stdout = io.StringIO()
+        registry = two_screener_registry()
+        calls = {"reads": 0}
+
+        def fake_read(_path):
+            calls["reads"] += 1
+            if calls["reads"] == 1:
+                return {"summary": None, "report_path": None, "top": None,
+                        "result_error": "missing result json"}
+            return {"summary": "ok", "report_path": None, "top": None, "result_error": None}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runs_dir = Path(temp_dir) / "runs"
+            with patch.object(cli, "command_for", return_value=["true"]), \
+                 patch.object(cli, "run_process", return_value=(0, False)), \
+                 patch.object(cli, "read_result_artifact", side_effect=fake_read), \
+                 patch.object(cli, "RUNS_DIR", runs_dir), \
+                 patch.object(cli.time, "sleep", return_value=None), \
+                 redirect_stdout(stdout):
+                cli.run_command(registry, args)
+
+            events = [json.loads(line) for line in stdout.getvalue().splitlines()]
+            finished = [e for e in events if e["type"] == "screener_finished"]
+            self.assertEqual([e["screener_id"] for e in finished], ["demo", "second"])
+
 
 class ResultTests(unittest.TestCase):
     def test_result_artifact_normalizes_ranked_rows(self):

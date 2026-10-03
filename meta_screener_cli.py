@@ -501,7 +501,7 @@ def run_json_command(registry: dict[str, Any], args: argparse.Namespace) -> int:
             results.append(screener_result)
             emit({"type": "screener_finished", **screener_result})
 
-            if rate_limited or (return_code != 0 and not args.continue_on_error) or result["result_error"]:
+            if rate_limited or (return_code != 0 and not args.continue_on_error) or (result["result_error"] and not args.continue_on_error):
                 stop_after_current = True
                 break
 
