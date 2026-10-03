@@ -31,7 +31,7 @@ describe("narrow-terminal state/layout", () => {
     expect(normal).toContain("## Candidate discovery");
     expect(normal).toContain("↑/↓ move");
     expect(narrow).not.toContain("## Candidate discovery");
-    expect(narrow).toContain("focus 1/24");
+    expect(narrow).toContain("focus 1/29");
     for (const line of narrow.split("\n")) {
       expect(line.length).toBeLessThanOrEqual(60);
     }
