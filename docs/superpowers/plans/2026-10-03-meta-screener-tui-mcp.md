@@ -69,9 +69,11 @@
 
 - [ ] Write Bun tests for workflow selection, JSON event handling, and narrow-terminal state/layout.
 - [ ] Implement an OpenTUI Core dashboard with grouped workflow navigation, a compact status summary, a focused workflow/results pane, and keyboard-help footer.
+- [ ] Preserve `screeners.json` order within each stage so keyboard focus always matches the visible row and Python run order.
 - [ ] Add keyboard navigation, selection toggles, run selected, run all, details, and clean quit/terminal cleanup.
 - [ ] Launch the Python CLI as a child process using the passed interpreter; consume JSON Lines incrementally, show progress, and prevent overlapping runs.
 - [ ] Render rankings only from `top` result rows; show an honest summary or report path for non-ranking workflows.
+- [ ] Avoid duplicate labels when a ranked row has `name == ticker`.
 - [ ] Load the latest valid compact run record from `.meta-screener/runs/` at startup so results remain visible after closing and reopening the TUI; never auto-run during startup.
 - [ ] Add optional foreground daily refresh, disabled by default, with no background process and no catch-up burst.
 - [ ] Lock dependencies and document the Bun install command in `tui/README.md` or the root README assigned to Task 1 only if the root agent explicitly accepts a separate handoff.
