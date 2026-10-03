@@ -75,8 +75,8 @@ def read_registry() -> dict[str, Any]:
         for flag in ("yahoo", "default_enabled"):
             if flag not in screener or not isinstance(screener[flag], bool):
                 raise ValueError(f"{flag} must be a boolean for {screener['id']}")
-        if not isinstance(screener["id"], str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", screener["id"]):
-            raise ValueError("Every screener id must use lowercase letters, digits, and hyphens")
+        if not isinstance(screener["id"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", screener["id"]):
+            raise ValueError("Every screener id must use lowercase letters, digits, and single hyphens (start with a letter)")
         if screener["id"] in ids:
             raise ValueError(f"Duplicate screener id: {screener['id']}")
         ids.add(screener["id"])

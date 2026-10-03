@@ -229,5 +229,32 @@ class ResultTests(unittest.TestCase):
         self.assertEqual(command[-4:], ["--batch-size", "25", "--batch-pause-seconds", "10"])
 
 
+class IdValidationTests(unittest.TestCase):
+    def _assert_id_validity(self, sid, ok):
+        import json as _json
+
+        reg = one_screener_registry()
+        reg["screeners"][0]["id"] = sid
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "screeners.json"
+            path.write_text(_json.dumps(reg), encoding="utf-8")
+            with patch.object(cli, "REGISTRY_PATH", path):
+                if ok:
+                    cli.read_registry()
+                else:
+                    with self.assertRaises(ValueError):
+                        cli.read_registry()
+
+    def test_rejects_leading_digit_and_double_hyphen_ids(self):
+        for bad in ("1abc", "a--b", "abc-"):
+            with self.subTest(bad=bad):
+                self._assert_id_validity(bad, False)
+
+    def test_accepts_strict_ids(self):
+        for good in ("a1-b2", "meta-overlap", "abc"):
+            with self.subTest(good=good):
+                self._assert_id_validity(good, True)
+
+
 if __name__ == "__main__":
     unittest.main()
