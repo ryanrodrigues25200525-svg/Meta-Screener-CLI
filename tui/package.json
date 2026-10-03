@@ -1,6 +1,6 @@
 {
   "name": "meta-screener-tui",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "OpenTUI dashboard for the Meta Screener CLI JSONL runner.",
   "scripts": {

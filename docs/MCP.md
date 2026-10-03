@@ -169,6 +169,16 @@ remove_screener({"screener_id": "my-context-scan"})
 `stage` must be a known stage ID (`discovery`, `market-context`, `company-signals`, `events`, `tracking`).
 Removing the registration keeps the `.py` file.
 
+## Providers and registry (v0.4.0)
+
+All 16 registry entries are Yahoo-only (`"yahoo": true`,
+`"provider": "Yahoo Finance via yfinance"`). Company and event screens take an
+explicit `--tickers` list or the shared built-in universe when run directly;
+`run_screeners` launches them with their registry `args` only. The static
+`macro-calendar` workflow is retired and no longer listed by `list_screeners`
+(Yahoo supplies no macro calendar; the script is preserved at
+`archive/econ_calendar.py`).
+
 ## Rate limiting
 
 Yahoo-backed runs through `run_screeners` obey the same sequential CLI behavior as `meta_screener run`:

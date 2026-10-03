@@ -134,3 +134,33 @@ No GitHub Actions workflow exists yet. Add `.github/workflows/ci.yml` that runs 
 ## OpenCode continuation prompt
 
 > Continue the Meta Screener CLI work from PR #1 and branch `codex/meta-screener-polish`. Read `docs/SESSION_RECAP_2026-10-03.md`, the linked design spec, and `docs/superpowers/plans/2026-10-03-meta-screener-tui-mcp.md` first. The v0.3.0 implementation is complete and the PR is open but not merged. Work through the recommended next phases, starting with Phase 1 CI and Phase 2 review follow-ups. Use only OpenCode Go Muse Spark 1.3 Contributor or DeepSeek 4.1 Flash for delegated work. Do not merge, tag, or run live Yahoo-backed workflows without the user's approval. Keep all tests and smoke checks isolated from the user's Finance Knowledge Graph and portfolio data.
+
+---
+
+## Addendum — 2026-10-03: v0.4.0 follow-up issues closed (tracker #5)
+
+The history above is preserved as written. This addendum records the
+follow-up work that closed issues #2, #3, #4 and tracker #5 on top of the
+v0.3.0 base. Version metadata is now aligned at **0.4.0** (`VERSION`,
+`pyproject.toml`, `screeners.json`, TUI `package.json`).
+
+- **Issue #4 (CI + edge cases):** `.github/workflows/ci.yml` runs the Python
+  suite on 3.10 and `bun test` + `bunx tsc --noEmit` in `tui/` on Bun 1.4.0,
+  offline from Yahoo/KG. Regression tests pin absolute/root-escaping path
+  rejection in `command_for`/`result_artifact_for` and empty/missing
+  `screener_id` TUI event guards.
+- **Issue #3 (stderr diagnostics):** failed workflows show a bounded
+  `Diagnostics (stderr):` tail in the TUI detail view, wired from the existing
+  `onStderr` plumbing; stdout stays JSONL-only.
+- **Issue #2 (Yahoo-only screeners):** new shared `yahoo_client.py` serial
+  scheduler/cache with fail-fast rate-limit stop is the only Yahoo request
+  path. All 16 registry entries carry `"yahoo": true` with matching provider
+  metadata. Fundamentals leave blanks on missing/mismatched periods;
+  catalyst-calendar lists only Yahoo earnings dates; research-frontier lists
+  Yahoo news in recency order without invented rankings; company screens take
+  `--tickers` or the built-in universe (`demo_universe.py`) as selection
+  input only. `macro-calendar` retired to `archive/econ_calendar.py`.
+- **Verification:** `python3 -m unittest discover -s tests` 93 tests OK;
+  `bun test` 37 tests pass; `bunx tsc --noEmit` exit 0; `py_compile` on the
+  touched modules exit 0; registry grep confirms no screen reads the Finance
+  Knowledge Graph, portfolio files, or local calendar notes.

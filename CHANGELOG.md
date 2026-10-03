@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-03
+
+Closes follow-up issues #2 (Yahoo-only screeners), #3 (TUI stderr
+diagnostics), and #4 (CI plus runner/TUI edge-case regression tests), and
+closes tracker #5.
+
+### Added
+
+- `yahoo_client.py` shared Yahoo Finance client used by every screener: one
+  serial scheduler with an on-disk cache and fail-fast stop on Yahoo
+  rate-limit responses, with no automatic retries. `yahoo_guard.py` keeps its
+  existing helpers and re-exports the shared client for compatibility.
+  Per-screener `--tickers` selection (comma-separated symbols) backed by the
+  shared built-in universe in `demo_universe.py` as selection input only.
+- `.github/workflows/ci.yml` gate running `python -m unittest discover -s tests`
+  on Python 3.10 plus `bun install --frozen-lockfile`, `bun test`, and
+  `bunx tsc --noEmit` in `tui/` on Bun 1.4.0. CI stays offline from Yahoo and
+  independent of the Finance Knowledge Graph, portfolio files, and credentials.
+- TUI failed-screener diagnostics: failed workflows show a bounded
+  `Diagnostics (stderr):` tail in the detail view, wired from the existing
+  `onStderr` runner plumbing into bounded per-screener `stderr` state. Stdout
+  stays JSONL-only and stderr is never parsed as events.
+- Regression tests: absolute/root-escaping path rejection for
+  `command_for`/`result_artifact_for`, empty and missing `screener_id` TUI
+  event guards, failing-child stderr capture and bounds, and fake-provider
+  Yahoo tests for fundamentals, market breadth, and earnings/news events.
+
+### Changed
+
+- All 16 registry entries are now Yahoo-only (`"yahoo": true`,
+  `"provider": "Yahoo Finance via yfinance"`): fundamentals screens read
+  Yahoo statements with blank output for missing/mismatched periods instead of
+  fabricated growth; breadth and meta-overlap read Yahoo price history/info;
+  catalyst-calendar lists only Yahoo earnings dates per ticker; research-frontier
+  lists latest Yahoo news per ticker in recency order without invented rankings;
+  analyst/short-interest/dividend/options screens fetch Yahoo info and options
+  chains for an explicit `--tickers` list or the built-in universe.
+- Validated ticker rankings are exposed only for stock screens that produce
+  them; context and event screens report status and summary instead.
+- Dashboard and CLI labels updated for the Yahoo-only registry: 16 workflows
+  across 5 stages, 15 enabled by default, `screen-history` remaining the
+  optional outcome tracker excluded from the default all-run.
+
+### Removed
+
+- `macro-calendar` retired from `screeners.json`: Yahoo supplies no macro
+  calendar and the static `KNOWN_EVENTS` schedule is not data. The script is
+  preserved for reference at `archive/econ_calendar.py`; confirm macro dates
+  with official sources (FRED API, central-bank calendars).
+
+### Fixed
+
+- Issue #4: CI gate plus regression coverage for empty/missing `screener_id`
+  events and absolute/escaping screener paths.
+- Issue #3: failed-screener stderr is now visible and bounded in the TUI
+  detail view instead of being silently dropped.
+- Issue #2: per-entry `provider` metadata now matches the actual Yahoo source
+  in every screen; no screen reads the Finance Knowledge Graph, portfolio
+  files, or local calendar notes.
+
 ## [0.3.0] - 2026-10-03
 
 ### Added

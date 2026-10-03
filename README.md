@@ -30,7 +30,7 @@ metascreener
 
 `metascreener` is the no-hyphen console command. The existing `meta-screener` name remains available as an alias. Both commands open the dashboard with no subcommand and use the same direct CLI commands below.
 
-The dashboard groups the registered workflows by stage, lets you select one or more, and runs them sequentially. It shows ticker rankings only for workflows that produce a ranked stock list; context, calendar, and research workflows show their status and available summary instead.
+The dashboard groups the registered Yahoo-only workflows by stage, lets you select one or more, and runs them sequentially. It shows ticker rankings only for stock screens that produce a validated ranked list; context and event screens show their status and available summary instead. A failed workflow shows a bounded stderr diagnostics tail in its detail view.
 
 Keyboard controls: arrows or `j/k` move, `space` selects, `a` selects all defaults, `c` clears, `r` runs selected, `R` runs all default-enabled workflows, `d` shows details, `f` toggles the opt-in daily refresh, and `q` quits.
 
@@ -45,11 +45,21 @@ metascreener run --screener meta-overlap
 metascreener run --all
 ```
 
-`screeners.json` registers 17 workflows. Sixteen run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
+`screeners.json` registers 16 Yahoo-only workflows. Fifteen run with `--all`; `screen-history` is an optional outcome tracker. The CLI runs multiple selections in registry stage order. The other Python files are supporting workflows and are not launched automatically.
 
 ## Yahoo Finance pacing
 
-Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
+All 16 registered workflows are Yahoo-only (`"yahoo": true` in `screeners.json`) and share one serial scheduler with an on-disk cache (`yahoo_client.py`). Yahoo-backed workflows run sequentially with one worker, batches of 8 tickers, and a 15-second pause by default. The CLI lets you set the batch size and a 10–30 second cooldown between workflows and ticker batches. If Yahoo reports a rate limit, the run stops and does not retry automatically. Use `metascreener plan ...` to review a selection before running it.
+
+Company and event screens accept an explicit ticker list when invoked directly, or fall back to the shared built-in universe:
+
+```bash
+metascreener run --screener analyst-consensus
+python3 short_interest.py --tickers AAPL,MSFT
+python3 catalyst_scan.py --tickers NVDA,AVGO
+```
+
+The static `macro-calendar` workflow is retired: Yahoo supplies no macro calendar, so the approximate recurring schedule was removed from the registry rather than kept as fake FOMC/CPI dates. The script is preserved for reference at `archive/econ_calendar.py`; confirm macro dates with official sources (FRED API, central-bank calendars).
 
 ## MCP for local AI agents
 
