@@ -74,8 +74,8 @@
 - [ ] Launch the Python CLI as a child process using the passed interpreter; consume JSON Lines incrementally, show progress, and prevent overlapping runs.
 - [ ] Render rankings only from `top` result rows; show an honest summary or report path for non-ranking workflows.
 - [ ] Avoid duplicate labels when a ranked row has `name == ticker`.
-- [ ] Load the latest valid compact run record from `.meta-screener/runs/` at startup so results remain visible after closing and reopening the TUI; never auto-run during startup.
-- [ ] Add optional foreground daily refresh for the current selection, disabled by default, with no background process and no catch-up burst.
+- [ ] Load the latest valid compact run record from `.meta-screener/runs/` at startup so results remain visible after closing and reopening the TUI; choose by `finished_at`, using file mtime only when that field is absent or invalid; never auto-run during startup.
+- [ ] Add optional foreground daily refresh for the current selection, disabled by default. When enabled, schedule the next run 24 hours from the toggle or most recent in-session run; never trigger a missed-run catch-up, use a background process, or overlap an active run.
 - [ ] Lock dependencies and document the Bun install command in `tui/README.md` or the root README assigned to Task 1 only if the root agent explicitly accepts a separate handoff.
 - [ ] Run focused Bun tests and inspect a real terminal session at normal and narrow widths.
 
