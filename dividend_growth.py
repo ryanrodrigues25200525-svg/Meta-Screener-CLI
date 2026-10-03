@@ -72,16 +72,23 @@ def _annual_totals(divs):
 
 
 def _streak(totals):
-    """Consecutive YoY increases ending at the latest year (0 when none)."""
-    if len(totals) < 2:
-        return 0, (totals[-1][1] if totals else 0.0), 0.0
+    """Consecutive YoY increases ending at the latest full year (0 when none).
+
+    The current calendar year is still paying out, so it is excluded from
+    the streak endpoint; otherwise every payer would read 0 in-year.
+    """
+    from datetime import date as _date
+
+    full = [t for t in totals if t[0] < _date.today().year]
+    if len(full) < 2:
+        return 0, (full[-1][1] if full else 0.0), 0.0
     run = 0
-    for i in range(len(totals) - 1, 0, -1):
-        if totals[i][1] > totals[i - 1][1]:
+    for i in range(len(full) - 1, 0, -1):
+        if full[i][1] > full[i - 1][1]:
             run += 1
         else:
             break
-    latest, previous = totals[-1][1], totals[-2][1]
+    latest, previous = full[-1][1], full[-2][1]
     change = round((latest - previous) / previous * 100, 1) if previous else 0.0
     return run, latest, change
 

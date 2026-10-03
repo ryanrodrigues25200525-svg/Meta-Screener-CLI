@@ -43,8 +43,55 @@ class SmartMoneyTests(unittest.TestCase):
         )
         self.assertIn("blank", payload["top"][0]["detail"].lower())
 
+    def test_pctheld_column_variant(self):
+        import smart_money
+
+        holders = _frame(
+            [["BlackRock", 0.0797], ["Vanguard", 0.0657]],
+            ["Holder", "pctHeld"],
+        )
+
+        class Fake:
+            def get_holders(self, ticker):
+                return holders
+
+        payload = smart_money.build_result_payload(
+            smart_money.screen_tickers(["AAPL"], provider=Fake()), "r"
+        )
+        self.assertAlmostEqual(float(payload["top"][0]["detail"].split("%")[0].split()[-1]), 14.5, places=1)
+        import smart_money
+
+        class Fake:
+            def get_holders(self, ticker):
+                return None
+
+        payload = smart_money.build_result_payload(
+            smart_money.screen_tickers(["AAPL"], provider=Fake()), "r"
+        )
+        self.assertIn("blank", payload["top"][0]["detail"].lower())
+
 
 class InsiderActivityTests(unittest.TestCase):
+    def test_text_column_fallback_and_grant_filter(self):
+        import insider_activity
+
+        rows = _frame(
+            [["X", "CEO", None, 100, 10000, "2026-09-01", "Direct",
+              "Sale at price 100 per share."],
+             ["Y", "Director", None, 50, 0, "2026-09-02", "Direct",
+              "Stock Award(Grant) at price 0.00 per share."]],
+            ["Insider", "Position", "Transaction", "Shares", "Value",
+             "Start Date", "Ownership", "Text"],
+        )
+
+        class Fake:
+            def get_insider(self, ticker):
+                return rows
+
+        data = insider_activity.screen_tickers(["AAPL"], provider=Fake())
+        self.assertEqual(data[0]["sellers"], 1)
+        self.assertEqual(data[0]["buyers"], 0)
+
     def test_cluster_buys_rank_first(self):
         import insider_activity
 
@@ -113,6 +160,27 @@ class AltmanZTests(unittest.TestCase):
 
 
 class CashReturnTests(unittest.TestCase):
+    def test_buyback_outflow_reports_positive_yield(self):
+        import cash_return
+
+        cf = _frame(
+            [[100.0], [-20.0]],
+            ["2025-12-31"],
+        )
+        cf.index = ["Free Cash Flow", "Repurchase Of Capital Stock"]
+
+        class Fake:
+            def get_financials(self, ticker, kind="cashflow"):
+                return cf
+
+            def get_info(self, ticker):
+                return {"marketCap": 1000.0}
+
+        payload = cash_return.build_result_payload(
+            cash_return.screen_tickers(["AAPL"], provider=Fake()), "r"
+        )
+        self.assertIn("buyback 2.0%", payload["top"][0]["detail"])
+
     def test_fcf_and_buyback_yields(self):
         import cash_return
 

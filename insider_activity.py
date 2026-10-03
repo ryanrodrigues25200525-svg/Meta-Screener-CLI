@@ -74,6 +74,7 @@ def _summarize(frame):
     lowered = {c.lower(): c for c in columns}
     txn_key = next((lowered[c] for c in lowered
                     if "trans" in c or "type" in c), None)
+    text_key = next((lowered[c] for c in lowered if c == "text"), None)
     shares_key = next((lowered[c] for c in lowered if "share" in c), None)
     insider_key = next((lowered[c] for c in lowered
                         if "insider" in c or "name" in c or "holder" in c), None)
@@ -84,8 +85,18 @@ def _summarize(frame):
     net = 0.0
     for _, row in frame.iterrows():
         side = _classify(row.get(txn_key))
+        if side is None and text_key is not None:
+            side = _classify(row.get(text_key))
         if side is None:
             continue
+        try:
+            value = float(row.get("Value") or 0)
+        except (TypeError, ValueError):
+            value = 0.0
+        text = f"{row.get(txn_key) or ''} {row.get(text_key) or ''}".lower()
+        if side == "buy" and value == 0 and any(
+                w in text for w in ("award", "grant", "gift")):
+            continue  # compensation, not open-market conviction
         try:
             shares = float(row.get(shares_key) or 0) if shares_key else 0.0
         except (TypeError, ValueError):

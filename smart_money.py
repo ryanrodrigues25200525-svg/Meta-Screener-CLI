@@ -60,7 +60,8 @@ def _pct_of_float(frame):
     if frame is None or getattr(frame, "empty", True):
         return None, 0
     key = next((c for c in columns
-                if c.strip().lower() in ("% out", "%out", "pct", "percent", "%")), None)
+                if c.strip().lower() in ("% out", "%out", "pct", "percent",
+                                         "%", "pctheld", "pctheld ")), None)
     if key is None:
         return None, 0
     try:

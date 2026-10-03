@@ -90,16 +90,18 @@ def screen_tickers(tickers, provider=None):
             rows.append({"ticker": ticker, "blank": True})
             continue
         fcf = _latest(cashflow, "Free Cash Flow")
-        buyback = _latest(cashflow, "Repurchase Of Capital Stock",
-                          "Repurchase Of Common Stock")
+        spent = _latest(cashflow, "Repurchase Of Capital Stock",
+                        "Repurchase Of Common Stock")
         cap = info.get("marketCap")
         if fcf is None or not cap or cap <= 0:
             rows.append({"ticker": ticker, "blank": True})
             continue
+        # Yahoo books repurchases as a negative cash outflow; yield is positive.
+        buyback = -(spent or 0)
         rows.append({
             "ticker": ticker,
             "fcf_yield": round(fcf / cap * 100, 2),
-            "buyback_yield": round((buyback or 0) / cap * 100, 2),
+            "buyback_yield": round(buyback / cap * 100, 2),
         })
     return rows
 
