@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-04
+
+### Changed
+
+- Moved the 21 registered screener scripts into `screeners/<stage>/`
+  folders (e.g. `screeners/meta_signals/meta_screen.py`); the runner now
+  launches them with `python -m`. Root keeps the CLI, MCP server, shared
+  Yahoo client, and supporting tools.
+
 ## [1.0.0] - 2026-10-04
 
 First stable release: 28 Yahoo-only screeners in 6 stages, family-split

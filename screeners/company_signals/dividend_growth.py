@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Rank cash returns (FCF yield plus buyback yield) from Yahoo Finance.
+"""Rank dividend-growth streaks from Yahoo Finance.
 
-Yahoo-backed: free cash flow and share repurchases come from Yahoo annual
-cashflow statements and market cap from Yahoo info, all via
-``yahoo_client`` (the only allowed Yahoo path — never call ``yf.Ticker``
-directly). Missing data stays blank.
+Yahoo-backed: payout history comes from Yahoo Finance via ``yahoo_client``
+(the only allowed Yahoo path — never call ``yf.Ticker`` directly). Annual
+payouts are summed per calendar year; the streak is the run of consecutive
+year-over-year increases ending in the latest year. Missing history stays
+blank.
 
 Usage:
-    python3 cash_return.py [--tickers AAPL,MSFT] [--result-json out/cash.json]
+    python3 dividend_growth.py [--tickers VZ,JNJ] [--result-json out/divgrowth.json]
 """
 
 import argparse
 import json
-import math
 import os
 import tempfile
 from datetime import date
@@ -27,7 +27,7 @@ def _default_notes_dir():
     legacy = os.environ.get("FINANCE_AI_ROOT") or os.environ.get("FINANCE_KG_ROOT")
     if legacy:
         return os.path.join(legacy, "Notes")
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 
 
 NOTES_DIR = _default_notes_dir()
@@ -43,38 +43,58 @@ def _client_for(provider):
     if provider is None:
         import yahoo_client
         return yahoo_client
-    if hasattr(provider, "get_financials"):
+    if hasattr(provider, "get_dividends"):
         return provider
     if callable(provider):
         from yahoo_client import YahooClient
         return YahooClient(provider=provider)
     raise TypeError("provider must be a YahooClient, a stub with "
-                    "get_financials, or a provider callable")
+                    "get_dividends, or a provider callable")
 
 
-def _latest(frame, *names):
-    """Latest annual value for the first matching row label; None when unusable."""
-    if frame is None or getattr(frame, "empty", True):
-        return None
+def _annual_totals(divs):
+    """Calendar-year payout sums oldest -> newest; empty when unusable."""
     try:
-        index = [str(i) for i in frame.index]
+        import pandas as pd
+
+        series = pd.to_numeric(pd.Series(divs).dropna(), errors="coerce").dropna()
     except Exception:
-        return None
-    lowered = {name.lower(): name for name in index}
-    for wanted in names:
-        if wanted.lower() in lowered:
-            try:
-                value = float(frame.loc[lowered[wanted.lower()]].iloc[0])
-            except (TypeError, ValueError, IndexError, KeyError):
-                return None
-            if math.isnan(value):
-                return None
-            return value
-    return None
+        return []
+    if series.empty:
+        return []
+    try:
+        grouped = series.groupby(series.index.year)
+        totals = [(int(year), round(float(group.sum()), 4))
+                  for year, group in grouped]
+    except Exception:
+        return []
+    return sorted(totals)
+
+
+def _streak(totals):
+    """Consecutive YoY increases ending at the latest full year (0 when none).
+
+    The current calendar year is still paying out, so it is excluded from
+    the streak endpoint; otherwise every payer would read 0 in-year.
+    """
+    from datetime import date as _date
+
+    full = [t for t in totals if t[0] < _date.today().year]
+    if len(full) < 2:
+        return 0, (full[-1][1] if full else 0.0), 0.0
+    run = 0
+    for i in range(len(full) - 1, 0, -1):
+        if full[i][1] > full[i - 1][1]:
+            run += 1
+        else:
+            break
+    latest, previous = full[-1][1], full[-2][1]
+    change = round((latest - previous) / previous * 100, 1) if previous else 0.0
+    return run, latest, change
 
 
 def screen_tickers(tickers, provider=None):
-    """Cash-return rows for the given tickers, fetched via Yahoo only."""
+    """Dividend-growth rows for the given tickers, fetched via Yahoo only."""
     client = _client_for(provider)
     rows = []
     for tk in tickers:
@@ -82,52 +102,44 @@ def screen_tickers(tickers, provider=None):
         if not ticker:
             continue
         try:
-            cashflow = client.get_financials(ticker, kind="cashflow")
-            info = client.get_info(ticker) or {}
+            divs = client.get_dividends(ticker)
         except RuntimeError:
             raise
         except Exception:
+            divs = None
+        totals = _annual_totals(divs)
+        if not totals:
             rows.append({"ticker": ticker, "blank": True})
             continue
-        fcf = _latest(cashflow, "Free Cash Flow")
-        spent = _latest(cashflow, "Repurchase Of Capital Stock",
-                        "Repurchase Of Common Stock")
-        cap = info.get("marketCap")
-        if fcf is None or not cap or cap <= 0:
-            rows.append({"ticker": ticker, "blank": True})
-            continue
-        # Yahoo books repurchases as a negative cash outflow; yield is positive.
-        buyback = -(spent or 0)
-        rows.append({
-            "ticker": ticker,
-            "fcf_yield": round(fcf / cap * 100, 2),
-            "buyback_yield": round(buyback / cap * 100, 2),
-        })
+        run, latest, change = _streak(totals)
+        rows.append({"ticker": ticker, "streak": run,
+                     "latest": latest, "change": change})
     return rows
 
 
 def build_result_payload(data, report_path):
     measured = [r for r in data if not r.get("blank")]
     blanks = [r for r in data if r.get("blank")]
-    ranked = sorted(measured, key=lambda row: row.get("fcf_yield") or 0, reverse=True)
+    ranked = sorted(measured, key=lambda row: (row.get("streak") or 0,
+                                               row.get("change") or 0), reverse=True)
     top = []
     for rank, row in enumerate(ranked, 1):
         top.append({
             "rank": rank,
             "ticker": row["ticker"],
             "name": row["ticker"],
-            "detail": (f"FCF yield {row['fcf_yield']}%; "
-                       f"buyback {row['buyback_yield']}%"),
+            "detail": (f"{row['streak']}-year raiser; latest ${row['latest']} "
+                       f"({row['change']:+.1f}%)"),
         })
     for row in blanks:
         top.append({
             "rank": len(top) + 1,
             "ticker": row["ticker"],
             "name": row["ticker"],
-            "detail": f"blank — no usable Yahoo cashflow for {row['ticker']}",
+            "detail": f"blank — no Yahoo dividend history for {row['ticker']}",
         })
     return {
-        "summary": (f"{len(ranked)} names with Yahoo cash returns "
+        "summary": (f"{len(ranked)} names with Yahoo dividend history "
                     f"({len(blanks)} blank)"),
         "report_path": str(report_path),
         "top": top,
@@ -141,7 +153,7 @@ def write_result_json(path, payload):
     try:
         with tempfile.NamedTemporaryFile(
             "w", encoding="utf-8", dir=os.path.dirname(absolute_path),
-            prefix=".cash-return-", suffix=".tmp", delete=False,
+            prefix=".dividend-growth-", suffix=".tmp", delete=False,
         ) as handle:
             temporary_path = handle.name
             json.dump(payload, handle, ensure_ascii=False, indent=2)
@@ -159,22 +171,23 @@ def write_note(today, data, result_json_path=None, notes_dir=None):
         "---",
         'type: "research-note"',
         f'date: "{today}"',
-        'topic: "Cash return — Yahoo FCF and buyback yields"',
-        'tags: ["cash", "buyback", "yield"]',
+        'topic: "Dividend growth — Yahoo payout streaks"',
+        'tags: ["dividend", "growth"]',
         "---",
         "",
-        f"# Cash Return (Yahoo) — {today}",
+        f"# Dividend Growth (Yahoo) — {today}",
         "",
-        "| Ticker | FCF % | Buyback % |",
-        "|--------|-------|-----------|",
+        "| Ticker | Streak | Latest $ | Change % |",
+        "|--------|--------|----------|----------|",
     ]
     ranked = sorted([d for d in data if not d.get("blank")],
-                    key=lambda x: x.get("fcf_yield") or 0, reverse=True)
+                    key=lambda x: (x.get("streak") or 0, x.get("change") or 0),
+                    reverse=True)
     for d in ranked:
-        lines.append(f"| {d['ticker']} | {d['fcf_yield']}% | {d['buyback_yield']}% |")
+        lines.append(f"| {d['ticker']} | {d['streak']}y | ${d['latest']} | {d['change']:+.1f}% |")
     for d in [d for d in data if d.get("blank")]:
-        lines.append(f"| {d['ticker']} | blank | |")
-    path = os.path.join(notes_dir, f"{today} Cash-Return.md")
+        lines.append(f"| {d['ticker']} | blank | | |")
+    path = os.path.join(notes_dir, f"{today} Dividend-Growth.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     print(f"Wrote {path}")
@@ -195,11 +208,12 @@ def main(argv=None):
     data = screen_tickers(tickers)
     ranked = [d for d in data if not d.get("blank")]
     blanks = [d for d in data if d.get("blank")]
-    print(f"Cash returns for {len(ranked)} of {len(tickers)} tickers; {len(blanks)} blank")
-    for row in sorted(ranked, key=lambda r: r.get("fcf_yield") or 0, reverse=True)[:10]:
-        print(f"  {row['ticker']:6} FCF {row['fcf_yield']}% buyback {row['buyback_yield']}%")
+    print(f"Dividend history for {len(ranked)} of {len(tickers)} tickers; {len(blanks)} blank")
+    for row in sorted(ranked, key=lambda r: (r.get("streak") or 0, r.get("change") or 0),
+                      reverse=True)[:10]:
+        print(f"  {row['ticker']:6} {row['streak']}y raiser (${row['latest']})")
     for row in blanks:
-        print(f"  {row['ticker']:6} blank — no usable Yahoo cashflow")
+        print(f"  {row['ticker']:6} blank — no Yahoo dividend history")
     write_note(today, data, args.result_json)
 
 

@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""Rank Altman Z-scores from Yahoo Finance statements.
+"""Rank cash returns (FCF yield plus buyback yield) from Yahoo Finance.
 
-Yahoo-backed: EBIT, revenue, working capital, retained earnings, assets,
-and liabilities come from Yahoo annual statements and market cap from
-Yahoo info, all via ``yahoo_client`` (the only allowed Yahoo path — never
-call ``yf.Ticker`` directly). Missing or mismatched data stays blank.
-
-Z = 1.2*WC/TA + 1.4*RE/TA + 3.3*EBIT/TA + 0.6*MVE/TL + 1.0*Sales/TA.
-Zones: >2.99 safe, 1.81-2.99 grey, <1.81 distress.
+Yahoo-backed: free cash flow and share repurchases come from Yahoo annual
+cashflow statements and market cap from Yahoo info, all via
+``yahoo_client`` (the only allowed Yahoo path — never call ``yf.Ticker``
+directly). Missing data stays blank.
 
 Usage:
-    python3 altman_z.py [--tickers AAPL,MSFT] [--result-json out/altman.json]
+    python3 cash_return.py [--tickers AAPL,MSFT] [--result-json out/cash.json]
 """
 
 import argparse
@@ -30,7 +27,7 @@ def _default_notes_dir():
     legacy = os.environ.get("FINANCE_AI_ROOT") or os.environ.get("FINANCE_KG_ROOT")
     if legacy:
         return os.path.join(legacy, "Notes")
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 
 
 NOTES_DIR = _default_notes_dir()
@@ -76,39 +73,8 @@ def _latest(frame, *names):
     return None
 
 
-def _z_score(income, balance, market_cap):
-    """Altman Z from annual statements; None when inputs are missing."""
-    ebit = _latest(income, "EBIT")
-    sales = _latest(income, "Total Revenue", "Operating Revenue")
-    wc = _latest(balance, "Working Capital")
-    re = _latest(balance, "Retained Earnings")
-    ta = _latest(balance, "Total Assets")
-    tl = _latest(balance, "Total Liabilities Net Minority Interest",
-                 "Total Liab", "Total Liabilities")
-    if None in (ebit, sales, wc, re, ta, tl):
-        return None
-    if not ta or not tl or market_cap is None or market_cap <= 0:
-        return None
-    try:
-        z = (1.2 * wc / ta + 1.4 * re / ta + 3.3 * ebit / ta
-             + 0.6 * market_cap / tl + 1.0 * sales / ta)
-    except (TypeError, ValueError, ZeroDivisionError):
-        return None
-    if math.isnan(z):
-        return None
-    return round(z, 2)
-
-
-def _zone(z):
-    if z > 2.99:
-        return "safe"
-    if z >= 1.81:
-        return "grey"
-    return "distress"
-
-
 def screen_tickers(tickers, provider=None):
-    """Altman-Z rows for the given tickers, fetched via Yahoo only."""
+    """Cash-return rows for the given tickers, fetched via Yahoo only."""
     client = _client_for(provider)
     rows = []
     for tk in tickers:
@@ -116,49 +82,52 @@ def screen_tickers(tickers, provider=None):
         if not ticker:
             continue
         try:
-            income = client.get_financials(ticker, kind="income")
-            balance = client.get_financials(ticker, kind="balance")
+            cashflow = client.get_financials(ticker, kind="cashflow")
             info = client.get_info(ticker) or {}
         except RuntimeError:
             raise
         except Exception:
             rows.append({"ticker": ticker, "blank": True})
             continue
-        z = _z_score(income, balance, info.get("marketCap"))
-        if z is None:
+        fcf = _latest(cashflow, "Free Cash Flow")
+        spent = _latest(cashflow, "Repurchase Of Capital Stock",
+                        "Repurchase Of Common Stock")
+        cap = info.get("marketCap")
+        if fcf is None or not cap or cap <= 0:
             rows.append({"ticker": ticker, "blank": True})
             continue
-        rows.append({"ticker": ticker, "z": z, "zone": _zone(z)})
+        # Yahoo books repurchases as a negative cash outflow; yield is positive.
+        buyback = -(spent or 0)
+        rows.append({
+            "ticker": ticker,
+            "fcf_yield": round(fcf / cap * 100, 2),
+            "buyback_yield": round(buyback / cap * 100, 2),
+        })
     return rows
 
 
 def build_result_payload(data, report_path):
     measured = [r for r in data if not r.get("blank")]
     blanks = [r for r in data if r.get("blank")]
-    ranked = sorted(measured, key=lambda row: row.get("z") if row.get("z") is not None else -99,
-                    reverse=True)
+    ranked = sorted(measured, key=lambda row: row.get("fcf_yield") or 0, reverse=True)
     top = []
     for rank, row in enumerate(ranked, 1):
         top.append({
             "rank": rank,
             "ticker": row["ticker"],
             "name": row["ticker"],
-            "detail": f"Z {row['z']} ({row['zone']} zone)",
+            "detail": (f"FCF yield {row['fcf_yield']}%; "
+                       f"buyback {row['buyback_yield']}%"),
         })
     for row in blanks:
         top.append({
             "rank": len(top) + 1,
             "ticker": row["ticker"],
             "name": row["ticker"],
-            "detail": f"blank — no usable Yahoo statements for {row['ticker']}",
+            "detail": f"blank — no usable Yahoo cashflow for {row['ticker']}",
         })
-    # Attach numeric z for tests/consumers without changing the validated shape.
-    for row in top:
-        src = next((m for m in measured if m["ticker"] == row["ticker"]), None)
-        if src is not None:
-            row["z"] = src["z"]
     return {
-        "summary": (f"{len(ranked)} names with Yahoo Altman-Z "
+        "summary": (f"{len(ranked)} names with Yahoo cash returns "
                     f"({len(blanks)} blank)"),
         "report_path": str(report_path),
         "top": top,
@@ -172,7 +141,7 @@ def write_result_json(path, payload):
     try:
         with tempfile.NamedTemporaryFile(
             "w", encoding="utf-8", dir=os.path.dirname(absolute_path),
-            prefix=".altman-z-", suffix=".tmp", delete=False,
+            prefix=".cash-return-", suffix=".tmp", delete=False,
         ) as handle:
             temporary_path = handle.name
             json.dump(payload, handle, ensure_ascii=False, indent=2)
@@ -190,23 +159,22 @@ def write_note(today, data, result_json_path=None, notes_dir=None):
         "---",
         'type: "research-note"',
         f'date: "{today}"',
-        'topic: "Altman Z — Yahoo balance-sheet safety"',
-        'tags: ["safety", "altman-z"]',
+        'topic: "Cash return — Yahoo FCF and buyback yields"',
+        'tags: ["cash", "buyback", "yield"]',
         "---",
         "",
-        f"# Altman-Z Safety (Yahoo) — {today}",
+        f"# Cash Return (Yahoo) — {today}",
         "",
-        "| Ticker | Z | Zone |",
-        "|--------|---|------|",
+        "| Ticker | FCF % | Buyback % |",
+        "|--------|-------|-----------|",
     ]
     ranked = sorted([d for d in data if not d.get("blank")],
-                    key=lambda x: x.get("z") if x.get("z") is not None else -99,
-                    reverse=True)
+                    key=lambda x: x.get("fcf_yield") or 0, reverse=True)
     for d in ranked:
-        lines.append(f"| {d['ticker']} | {d['z']} | {d['zone']} |")
+        lines.append(f"| {d['ticker']} | {d['fcf_yield']}% | {d['buyback_yield']}% |")
     for d in [d for d in data if d.get("blank")]:
         lines.append(f"| {d['ticker']} | blank | |")
-    path = os.path.join(notes_dir, f"{today} Altman-Z.md")
+    path = os.path.join(notes_dir, f"{today} Cash-Return.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     print(f"Wrote {path}")
@@ -227,11 +195,11 @@ def main(argv=None):
     data = screen_tickers(tickers)
     ranked = [d for d in data if not d.get("blank")]
     blanks = [d for d in data if d.get("blank")]
-    print(f"Altman-Z for {len(ranked)} of {len(tickers)} tickers; {len(blanks)} blank")
-    for row in sorted(ranked, key=lambda r: r.get("z") or -99, reverse=True)[:10]:
-        print(f"  {row['ticker']:6} Z {row['z']} ({row['zone']})")
+    print(f"Cash returns for {len(ranked)} of {len(tickers)} tickers; {len(blanks)} blank")
+    for row in sorted(ranked, key=lambda r: r.get("fcf_yield") or 0, reverse=True)[:10]:
+        print(f"  {row['ticker']:6} FCF {row['fcf_yield']}% buyback {row['buyback_yield']}%")
     for row in blanks:
-        print(f"  {row['ticker']:6} blank — no usable Yahoo statements")
+        print(f"  {row['ticker']:6} blank — no usable Yahoo cashflow")
     write_note(today, data, args.result_json)
 
 

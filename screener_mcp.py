@@ -32,6 +32,15 @@ RATE_LIMIT_RE = re.compile(
 REQUIRED_SCREENER_FIELDS = ("id", "name", "file", "stage", "description", "provider")
 REGISTRY_NAME = "screeners.json"
 META_SCREEN_FILE = "meta_screen.py"
+META_SCREEN_PATH = "screeners/meta_signals/meta_screen.py"
+
+
+def _meta_screen_path(root: Path) -> Path:
+    """Locate meta_screen.py under root, falling back to the legacy layout."""
+    candidate = Path(root) / META_SCREEN_PATH
+    if candidate.is_file():
+        return candidate
+    return Path(root) / META_SCREEN_FILE
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +158,7 @@ def _known_stages(registry: dict[str, Any]) -> list[str]:
 
 def _known_checks(root: Path) -> dict[str, tuple[str, str]]:
     """Return ``{name: (category, description)}`` parsed from meta_screen.py."""
-    meta_screen = Path(root) / META_SCREEN_FILE
+    meta_screen = _meta_screen_path(root)
     try:
         source = meta_screen.read_text(encoding="utf-8")
     except OSError as exc:
@@ -396,7 +405,7 @@ def _create_screener(
     entry = {
         "id": screener_id,
         "name": name.strip(),
-        "file": META_SCREEN_FILE,
+        "file": META_SCREEN_PATH,
         "stage": stage_id,
         "description": (description or f"Custom meta-screen profile: {', '.join(selected)}.").strip(),
         "provider": "Yahoo Finance via yfinance",

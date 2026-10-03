@@ -20,7 +20,7 @@ def import_without_yahoo(module_name):
 def import_rotation_screen():
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch.dict(os.environ, {"KG_VAULT": temp_dir}):
-            return importlib.import_module("rotation_screen")
+            return importlib.import_module("screeners.discovery.rotation_screen")
 
 
 class RankedResultTests(unittest.TestCase):
@@ -38,7 +38,7 @@ class RankedResultTests(unittest.TestCase):
         self.assertEqual(result["report_path"], "rotation.csv")
 
     def test_short_interest_result_ranks_highest_float_short_first_and_caps_at_ten(self):
-        short_interest = import_without_yahoo("short_interest")
+        short_interest = import_without_yahoo("screeners.company_signals.short_interest")
         rows = [
             {"ticker": f"T{i}", "short_pct": i, "short_ratio": 2.0, "flag": "NORMAL"}
             for i in range(12)
@@ -52,7 +52,7 @@ class RankedResultTests(unittest.TestCase):
         self.assertEqual(result["report_path"], "short-interest.md")
 
     def test_short_interest_writes_ranked_rows_without_changing_report_path(self):
-        short_interest = import_without_yahoo("short_interest")
+        short_interest = import_without_yahoo("screeners.company_signals.short_interest")
         rows = [
             {"ticker": "LOW", "short_pct": 5.0, "short_ratio": 1.0, "shares_short": 100, "flag": "NORMAL"},
             {"ticker": "HIGH", "short_pct": 25.0, "short_ratio": 4.0, "shares_short": 200, "flag": "HIGH"},
@@ -69,7 +69,7 @@ class RankedResultTests(unittest.TestCase):
             self.assertEqual(result["report_path"], note_path)
 
     def test_dividend_result_ranks_yield_high_to_low(self):
-        dividend_analysis = import_without_yahoo("dividend_analysis")
+        dividend_analysis = import_without_yahoo("screeners.company_signals.dividend_analysis")
         rows = [
             {"ticker": "LOW", "yield": 1.2, "rate": 0.8, "payout": 20.0},
             {"ticker": "HIGH", "yield": 5.4, "rate": 3.2, "payout": 60.0},
@@ -81,7 +81,7 @@ class RankedResultTests(unittest.TestCase):
         self.assertIn("5.4%", result["top"][0]["detail"])
 
     def test_dividend_analysis_writes_ranked_rows_for_the_existing_note(self):
-        dividend_analysis = import_without_yahoo("dividend_analysis")
+        dividend_analysis = import_without_yahoo("screeners.company_signals.dividend_analysis")
         rows = [
             {"ticker": "LOW", "yield": 1.2, "rate": 0.8, "payout": 20.0},
             {"ticker": "HIGH", "yield": 5.4, "rate": 3.2, "payout": 60.0},

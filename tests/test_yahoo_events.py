@@ -82,7 +82,7 @@ def sample_news(title="Apple reports strong quarter", publisher="Yahoo Finance")
 
 class CatalystYahooTests(unittest.TestCase):
     def test_catalyst_uses_yahoo_earnings_only(self):
-        import catalyst_scan
+        from screeners.events import catalyst_scan
 
         coming = date.today() + timedelta(days=5)
         payload = catalyst_scan.build_catalyst_payload(
@@ -95,7 +95,7 @@ class CatalystYahooTests(unittest.TestCase):
         self.assertEqual(payload["top"][0]["ticker"], "AAPL")
 
     def test_catalyst_blank_when_yahoo_has_no_earnings_dates(self):
-        import catalyst_scan
+        from screeners.events import catalyst_scan
 
         payload = catalyst_scan.build_catalyst_payload(
             ["AAPL"], provider=FakeYahooEarnings({})
@@ -104,7 +104,7 @@ class CatalystYahooTests(unittest.TestCase):
         self.assertIn("blank", payload["top"][0]["detail"].lower())
 
     def test_catalyst_does_not_read_kg_or_call_yfinance_directly(self):
-        src = Path("catalyst_scan.py").read_text(encoding="utf-8")
+        src = Path("screeners/events/catalyst_scan.py").read_text(encoding="utf-8")
         for banned in ("kg_links", "upcoming_catalysts", "Important Dates",
                        "Finance Knowledge Graph", "pm_portfolio",
                        "import yfinance", "from yfinance",
@@ -120,7 +120,7 @@ class MacroRetirementTests(unittest.TestCase):
         yahoo_has_no_macro = True
         if yahoo_has_no_macro:
             self.assertNotIn("macro-calendar", ids)
-        self.assertNotIn("econ_calendar.py",
+        self.assertNotIn("archive/econ_calendar.py",
                          [s.get("file") for s in registry["screeners"]])
 
     def test_econ_calendar_archived_not_active(self):
@@ -130,7 +130,7 @@ class MacroRetirementTests(unittest.TestCase):
 
 class FrontierYahooTests(unittest.TestCase):
     def test_frontier_lists_yahoo_news_per_ticker(self):
-        import frontier_scan
+        from screeners.events import frontier_scan
 
         payload = frontier_scan.build_frontier_payload(
             ["AAPL"], provider=FakeYahooNews({"AAPL": [sample_news()]})
@@ -141,7 +141,7 @@ class FrontierYahooTests(unittest.TestCase):
         self.assertIn("finance.yahoo.com", payload["top"][0]["detail"])
 
     def test_frontier_blank_when_no_yahoo_news(self):
-        import frontier_scan
+        from screeners.events import frontier_scan
 
         payload = frontier_scan.build_frontier_payload(
             ["AAPL"], provider=FakeYahooNews({})
@@ -149,7 +149,7 @@ class FrontierYahooTests(unittest.TestCase):
         self.assertIn("blank", payload["summary"].lower())
 
     def test_frontier_does_not_read_notes_or_rank_importance(self):
-        src = Path("frontier_scan.py").read_text(encoding="utf-8")
+        src = Path("screeners/events/frontier_scan.py").read_text(encoding="utf-8")
         for banned in ("kg_links", "What's still open", "Important Dates",
                        "Finance Knowledge Graph", "glob.glob",
                        "import yfinance", "from yfinance",
@@ -160,10 +160,10 @@ class FrontierYahooTests(unittest.TestCase):
 class HoldingsUniverseTests(unittest.TestCase):
     def test_screens_share_demo_holdings_universe(self):
         import demo_universe
-        import analyst_scan
-        import short_interest
-        import dividend_analysis
-        import unusual_options
+        from screeners.company_signals import analyst_scan
+        from screeners.company_signals import short_interest
+        from screeners.company_signals import dividend_analysis
+        from screeners.company_signals import unusual_options
 
         self.assertTrue(demo_universe.HOLDINGS_TICKERS)
         self.assertEqual(analyst_scan.default_tickers(),
@@ -176,8 +176,10 @@ class HoldingsUniverseTests(unittest.TestCase):
                          demo_universe.HOLDINGS_TICKERS)
 
     def test_holdings_modules_do_not_read_portfolio_or_kg(self):
-        for module in ("analyst_scan.py", "short_interest.py",
-                       "dividend_analysis.py", "unusual_options.py"):
+        for module in ("screeners/company_signals/analyst_scan.py",
+                         "screeners/company_signals/short_interest.py",
+                         "screeners/company_signals/dividend_analysis.py",
+                         "screeners/company_signals/unusual_options.py"):
             src = Path(module).read_text(encoding="utf-8")
             for banned in ("pm_portfolio", "Companies", "kg_links",
                            "load_ticker_map", "Finance Knowledge Graph",
@@ -188,7 +190,7 @@ class HoldingsUniverseTests(unittest.TestCase):
 
 class HoldingsFactsTests(unittest.TestCase):
     def test_analyst_consensus_from_yahoo_info(self):
-        import analyst_scan
+        from screeners.company_signals import analyst_scan
 
         provider = FakeYahooInfo({"AAPL": {
             "recommendationKey": "buy", "targetMeanPrice": 200.0,
@@ -203,7 +205,7 @@ class HoldingsFactsTests(unittest.TestCase):
         self.assertIn("buy", payload["top"][0]["detail"].lower())
 
     def test_short_interest_from_yahoo_info(self):
-        import short_interest
+        from screeners.company_signals import short_interest
 
         provider = FakeYahooInfo({"AAPL": {
             "shortPercentOfFloat": 0.25, "shortRatio": 3.0, "sharesShort": 10,
@@ -215,7 +217,7 @@ class HoldingsFactsTests(unittest.TestCase):
         self.assertIn("25", payload["top"][0]["detail"])
 
     def test_dividend_from_yahoo_info(self):
-        import dividend_analysis
+        from screeners.company_signals import dividend_analysis
 
         provider = FakeYahooInfo({"VZ": {
             "dividendYield": 0.06, "dividendRate": 2.6, "payoutRatio": 0.6,
@@ -228,7 +230,7 @@ class HoldingsFactsTests(unittest.TestCase):
         self.assertIn("yield", payload["top"][0]["detail"].lower())
 
     def test_unusual_options_from_yahoo_chain(self):
-        import unusual_options
+        from screeners.company_signals import unusual_options
 
         calls = pd.DataFrame({"volume": [100, 5], "openInterest": [10, 10]})
         puts = pd.DataFrame({"volume": [1, 1], "openInterest": [50, 50]})
@@ -244,13 +246,13 @@ class HoldingsFactsTests(unittest.TestCase):
 
 class ScreenTrackerTests(unittest.TestCase):
     def test_tracker_resolves_ticker_symbols_without_kg(self):
-        import screen_tracker
+        from screeners.tracking import screen_tracker
 
         ticker, _display = screen_tracker.resolve_ticker("AAPL", {})
         self.assertEqual(ticker, "AAPL")
 
     def test_tracker_source_has_no_kg_reads(self):
-        src = Path("screen_tracker.py").read_text(encoding="utf-8")
+        src = Path("screeners/tracking/screen_tracker.py").read_text(encoding="utf-8")
         for banned in ("kg_links", "load_ticker_map", "Companies",
                        "Finance Knowledge Graph", "pm_portfolio",
                        "Important Dates", "import yfinance", "from yfinance",

@@ -32,7 +32,10 @@ def find_project_root() -> Path:
             resolved = candidate.resolve()
         except OSError:
             continue
-        if (resolved / "screeners.json").is_file() and (resolved / "meta_screen.py").is_file():
+        if (resolved / "screeners.json").is_file() and (
+            (resolved / "screeners").is_dir()
+            or (resolved / "meta_screen.py").is_file()
+        ):
             return resolved
     raise RuntimeError("Finance AI folder not found; run from the repository root or set FINANCE_AI_HOME.")
 
@@ -40,7 +43,7 @@ def find_project_root() -> Path:
 ROOT = find_project_root()
 REGISTRY_PATH = ROOT / "screeners.json"
 VERSION_PATH = ROOT / "VERSION"
-META_SCREEN_PATH = ROOT / "meta_screen.py"
+META_SCREEN_PATH = ROOT / "screeners" / "meta_signals" / "meta_screen.py"
 RUNS_DIR = ROOT / ".meta-screener" / "runs"
 RUN_HISTORY_LIMIT = 30
 RATE_LIMIT_RE = re.compile(
@@ -152,9 +155,10 @@ def command_for(
         raise ValueError(f"Screener path escapes this folder: {screener['file']}")
     if not script.is_file() or script.suffix != ".py":
         raise ValueError(f"Screener script is missing or not Python: {screener['file']}")
-    relative_file = script.relative_to(ROOT).as_posix()
-    command = [python, str(script), *screener.get("args", [])]
-    if relative_file == "meta_screen.py":
+    module = script.relative_to(ROOT).with_suffix("").as_posix().replace("/", ".")
+    command = [python, "-m", module, *screener.get("args", [])]
+    script_name = script.name
+    if script_name == "meta_screen.py":
         command.extend([
             "--workers", str(workers),
             "--batch-size", str(batch_size),
@@ -162,22 +166,22 @@ def command_for(
         ])
         if result_dir is not None:
             command.extend(["--top", "10", "--result-json", str(result_dir / f"{screener['id']}.json")])
-    elif relative_file == "rotation_screen.py" and result_dir is not None:
+    elif script_name == "rotation_screen.py" and result_dir is not None:
         command.extend([
             "--csv-out", str(result_dir / f"{screener['id']}.csv"),
             "--result-json", str(result_dir / f"{screener['id']}.json"),
         ])
-    elif relative_file == "growth_momentum.py" and result_dir is not None:
+    elif script_name == "growth_momentum.py" and result_dir is not None:
         command.extend([
             "--csv-out", str(result_dir / f"{screener['id']}.csv"),
             "--result-json", str(result_dir / f"{screener['id']}.json"),
         ])
-    elif relative_file in {"short_interest.py", "dividend_analysis.py",
+    elif script_name in {"short_interest.py", "dividend_analysis.py",
                              "smart_money.py", "insider_activity.py",
                              "altman_z.py", "cash_return.py",
                              "dividend_growth.py"} and result_dir is not None:
         command.extend(["--result-json", str(result_dir / f"{screener['id']}.json")])
-    elif relative_file == "breadth_rotation.py" and result_dir is not None:
+    elif script_name == "breadth_rotation.py" and result_dir is not None:
         command.extend(["--result-json", str(result_dir / f"{screener['id']}.json")])
     elif screener.get("batchable"):
         command.extend([
@@ -351,7 +355,7 @@ def result_artifact_for(screener: dict[str, Any], result_dir: Path) -> Path | No
     if not script.is_relative_to(ROOT):
         return None
     relative_file = script.relative_to(ROOT).as_posix()
-    if relative_file in {
+    if script.name in {
         "meta_screen.py", "rotation_screen.py", "growth_momentum.py",
         "short_interest.py", "dividend_analysis.py", "breadth_rotation.py",
         "smart_money.py", "insider_activity.py", "altman_z.py",

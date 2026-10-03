@@ -28,7 +28,7 @@ def _default_notes_dir():
     legacy = os.environ.get("FINANCE_KG_ROOT")
     if legacy:
         return os.path.join(legacy, "Notes")
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 
 
 NOTES_DIR = _default_notes_dir()

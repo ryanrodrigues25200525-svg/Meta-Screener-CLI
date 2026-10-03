@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "stages": [
     {
       "id": "discovery",
@@ -36,7 +36,7 @@
     {
       "id": "fundamental-rotation",
       "name": "Fundamental Rotation Screen",
-      "file": "rotation_screen.py",
+      "file": "screeners/discovery/rotation_screen.py",
       "stage": "discovery",
       "description": "Ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
       "provider": "Yahoo Finance via yfinance",
@@ -58,7 +58,7 @@
     {
       "id": "revenue-growth-momentum",
       "name": "Revenue Growth Momentum",
-      "file": "growth_momentum.py",
+      "file": "screeners/discovery/growth_momentum.py",
       "stage": "discovery",
       "description": "Compares each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
       "provider": "Yahoo Finance via yfinance",
@@ -80,7 +80,7 @@
     {
       "id": "meta-momentum",
       "name": "Meta Screen: Momentum",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the 4 momentum checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
@@ -112,7 +112,7 @@
     {
       "id": "meta-technical",
       "name": "Meta Screen: Technicals",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the 4 technical-structure checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
@@ -144,7 +144,7 @@
     {
       "id": "meta-valuation",
       "name": "Meta Screen: Valuation",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the 5 valuation checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
@@ -178,7 +178,7 @@
     {
       "id": "meta-fundamental",
       "name": "Meta Screen: Fundamentals",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the 3 fundamental-growth checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
@@ -208,7 +208,7 @@
     {
       "id": "meta-theme",
       "name": "Meta Screen: Theme Rotation",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the 23 theme-rotation checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
@@ -278,7 +278,7 @@
     {
       "id": "meta-insider",
       "name": "Meta Screen: Insider",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the insider cluster-buy check across the curated universe.",
       "provider": "Yahoo Finance via yfinance",
@@ -304,7 +304,7 @@
     {
       "id": "meta-earnings",
       "name": "Meta Screen: Earnings Drift",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the earnings-beat-drift check across the curated universe.",
       "provider": "Yahoo Finance via yfinance",
@@ -330,7 +330,7 @@
     {
       "id": "meta-quality",
       "name": "Meta Screen: Quality",
-      "file": "meta_screen.py",
+      "file": "screeners/meta_signals/meta_screen.py",
       "stage": "meta-signals",
       "description": "Runs the 6 business-quality checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
@@ -366,7 +366,7 @@
     {
       "id": "sector-rotation",
       "name": "Sector Rotation",
-      "file": "sector_rotation.py",
+      "file": "screeners/market_context/sector_rotation.py",
       "stage": "market-context",
       "description": "Compares sector ETF performance over short and medium horizons.",
       "provider": "Yahoo Finance via yfinance",
@@ -387,7 +387,7 @@
     {
       "id": "market-breadth",
       "name": "Market Breadth and Theme Rotation",
-      "file": "breadth_rotation.py",
+      "file": "screeners/market_context/breadth_rotation.py",
       "stage": "market-context",
       "description": "Measures shares above a long moving average, positive 3-month returns, and median group returns from Yahoo daily closes.",
       "provider": "Yahoo Finance via yfinance",
@@ -407,7 +407,7 @@
     {
       "id": "volatility-regime",
       "name": "Volatility Regime",
-      "file": "volatility_regime.py",
+      "file": "screeners/market_context/volatility_regime.py",
       "stage": "market-context",
       "description": "Summarizes VIX levels and term-structure/regime inputs from available market series.",
       "provider": "Yahoo Finance via yfinance",
@@ -429,7 +429,7 @@
     {
       "id": "market-sentiment",
       "name": "Market Sentiment Context",
-      "file": "market_sentiment.py",
+      "file": "screeners/market_context/market_sentiment.py",
       "stage": "market-context",
       "description": "Reports VIX and QQQ/SPY market proxies used by the local sentiment summary.",
       "provider": "Yahoo Finance via yfinance",
@@ -450,7 +450,7 @@
     {
       "id": "commodities-fx",
       "name": "Commodities and FX Context",
-      "file": "commodities_fx.py",
+      "file": "screeners/market_context/commodities_fx.py",
       "stage": "market-context",
       "description": "Summarizes commodity futures and major FX proxies.",
       "provider": "Yahoo Finance via yfinance",
@@ -471,7 +471,7 @@
     {
       "id": "cot-futures-proxy",
       "name": "Futures Positioning Proxy",
-      "file": "cot_report.py",
+      "file": "screeners/market_context/cot_report.py",
       "stage": "market-context",
       "description": "Uses futures price/volume proxies; it is not an official CFTC Commitments of Traders data pull.",
       "provider": "Yahoo Finance via yfinance proxy",
@@ -492,7 +492,7 @@
     {
       "id": "analyst-consensus",
       "name": "Analyst Consensus Snapshot",
-      "file": "analyst_scan.py",
+      "file": "screeners/company_signals/analyst_scan.py",
       "stage": "company-signals",
       "description": "Collects recommendation, price-target range, and analyst-count fields from Yahoo info for an explicit ticker list or the shared built-in universe.",
       "provider": "Yahoo Finance via yfinance",
@@ -513,7 +513,7 @@
     {
       "id": "short-interest",
       "name": "Portfolio Short-Interest Screen",
-      "file": "short_interest.py",
+      "file": "screeners/company_signals/short_interest.py",
       "stage": "company-signals",
       "description": "Fetches Yahoo short-interest fields for an explicit ticker list or the shared built-in universe.",
       "provider": "Yahoo Finance via yfinance",
@@ -533,7 +533,7 @@
     {
       "id": "dividend-analysis",
       "name": "Portfolio Dividend Screen",
-      "file": "dividend_analysis.py",
+      "file": "screeners/company_signals/dividend_analysis.py",
       "stage": "company-signals",
       "description": "Summarizes Yahoo dividend yield and payout fields for an explicit ticker list or the shared built-in universe.",
       "provider": "Yahoo Finance via yfinance",
@@ -553,7 +553,7 @@
     {
       "id": "options-activity",
       "name": "Portfolio Options-Activity Screen",
-      "file": "unusual_options.py",
+      "file": "screeners/company_signals/unusual_options.py",
       "stage": "company-signals",
       "description": "Checks Yahoo options-chain activity for an explicit ticker list or the shared built-in universe; provider coverage may be incomplete.",
       "provider": "Yahoo Finance via yfinance",
@@ -573,7 +573,7 @@
     {
       "id": "smart-money",
       "name": "Smart Money Tracker",
-      "file": "smart_money.py",
+      "file": "screeners/company_signals/smart_money.py",
       "stage": "company-signals",
       "description": "Ranks institutional ownership share from Yahoo holder tables; blanks when Yahoo has no holder data.",
       "provider": "Yahoo Finance via yfinance",
@@ -595,7 +595,7 @@
     {
       "id": "insider-activity",
       "name": "Insider Activity",
-      "file": "insider_activity.py",
+      "file": "screeners/company_signals/insider_activity.py",
       "stage": "company-signals",
       "description": "Counts insider buyers vs sellers from Yahoo transactions; cluster buys rank first, blanks on no data.",
       "provider": "Yahoo Finance via yfinance",
@@ -617,7 +617,7 @@
     {
       "id": "altman-z",
       "name": "Altman-Z Safety",
-      "file": "altman_z.py",
+      "file": "screeners/company_signals/altman_z.py",
       "stage": "company-signals",
       "description": "Ranks Altman Z-scores from Yahoo statements; safe/grey/distress zones, blanks on missing inputs.",
       "provider": "Yahoo Finance via yfinance",
@@ -639,7 +639,7 @@
     {
       "id": "cash-return",
       "name": "Cash Return",
-      "file": "cash_return.py",
+      "file": "screeners/company_signals/cash_return.py",
       "stage": "company-signals",
       "description": "Ranks FCF yield with buyback yield from Yahoo cashflow; blanks when cashflow or market cap is missing.",
       "provider": "Yahoo Finance via yfinance",
@@ -661,7 +661,7 @@
     {
       "id": "dividend-growth",
       "name": "Dividend Growth",
-      "file": "dividend_growth.py",
+      "file": "screeners/company_signals/dividend_growth.py",
       "stage": "company-signals",
       "description": "Ranks consecutive annual payout increases from Yahoo dividend history; blanks on no history.",
       "provider": "Yahoo Finance via yfinance",
@@ -683,7 +683,7 @@
     {
       "id": "catalyst-calendar",
       "name": "Company Catalyst Calendar",
-      "file": "catalyst_scan.py",
+      "file": "screeners/events/catalyst_scan.py",
       "stage": "events",
       "description": "Lists only Yahoo earnings dates per ticker for an explicit ticker list or the shared built-in universe; no local calendar fallback.",
       "provider": "Yahoo Finance via yfinance",
@@ -704,7 +704,7 @@
     {
       "id": "research-frontier",
       "name": "Open Research Questions",
-      "file": "frontier_scan.py",
+      "file": "screeners/events/frontier_scan.py",
       "stage": "events",
       "description": "Lists latest Yahoo news stories per ticker in recency order; not ranked by importance.",
       "provider": "Yahoo Finance via yfinance",
@@ -724,7 +724,7 @@
     {
       "id": "screen-history",
       "name": "Meta-Screen Outcome Tracker",
-      "file": "screen_tracker.py",
+      "file": "screeners/tracking/screen_tracker.py",
       "stage": "tracking",
       "description": "Tracks returns after prior meta-screen flags using Yahoo price histories; this is an outcome tracker, not a candidate screener.",
       "provider": "Yahoo Finance via yfinance",

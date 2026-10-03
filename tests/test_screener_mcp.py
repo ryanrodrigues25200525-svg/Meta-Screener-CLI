@@ -212,7 +212,7 @@ class CreateScreenerTests(RegistryTestCase):
             ["6m momentum leader (vs SPY)", "positive free cash flow"],
         )
         entry = result["created"]
-        self.assertEqual(entry["file"], "meta_screen.py")
+        self.assertEqual(entry["file"], "screeners/meta_signals/meta_screen.py")
         self.assertEqual(entry["stage"], "discovery")
         self.assertIs(entry["yahoo"], True)
         self.assertIs(entry["default_enabled"], False)

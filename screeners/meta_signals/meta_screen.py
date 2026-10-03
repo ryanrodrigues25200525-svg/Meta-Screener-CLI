@@ -28,7 +28,7 @@ import numpy as np
 
 import yahoo_client  # noqa: E402  (only allowed Yahoo path)
 
-FINANCE_AI = os.path.dirname(os.path.abspath(__file__))
+FINANCE_AI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _default_kg_root():

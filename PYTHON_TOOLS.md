@@ -19,22 +19,22 @@ Yahoo-only (`"yahoo": true`); company and event screens accept an explicit
 `demo_universe.py` as selection input only. `macro-calendar` is retired (see
 `archive/econ_calendar.py`).
 
-- [`meta_screen.py`](meta_screen.py) (`meta-*` families) — deterministic 47-check cross-signal breadth screen over a curated universe, split into 8 family screens via named check subsets; each exports its top ranking.
-- [`rotation_screen.py`](rotation_screen.py) (`fundamental-rotation`) — ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.
-- [`growth_momentum.py`](growth_momentum.py) (`revenue-growth-momentum`) — each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.
-- [`sector_rotation.py`](sector_rotation.py) (`sector-rotation`) — sector ETF performance over short and medium horizons.
-- [`breadth_rotation.py`](breadth_rotation.py) (`market-breadth`) — share of names above a 10-month moving average, positive 3-month returns, and median theme returns from Yahoo daily closes.
-- [`volatility_regime.py`](volatility_regime.py) (`volatility-regime`) — VIX term structure and volatility-regime classification.
-- [`market_sentiment.py`](market_sentiment.py) (`market-sentiment`) — VIX, put/call, and Fear & Greed proxy.
-- [`commodities_fx.py`](commodities_fx.py) (`commodities-fx`) — commodity prices and FX rates.
-- [`cot_report.py`](cot_report.py) (`cot-futures-proxy`) — futures positioning via a yfinance proxy (not official CFTC data).
-- [`analyst_scan.py`](analyst_scan.py) (`analyst-consensus`) — sell-side consensus (recommendation, targets, analyst count) from Yahoo info for an explicit `--tickers` list or the built-in universe.
-- [`short_interest.py`](short_interest.py) (`short-interest`) — ranks tickers by Yahoo short percentage of float for an explicit `--tickers` list or the built-in universe.
-- [`dividend_analysis.py`](dividend_analysis.py) (`dividend-analysis`) — ranks tickers by Yahoo dividend yield and payout context for an explicit `--tickers` list or the built-in universe.
-- [`unusual_options.py`](unusual_options.py) (`options-activity`) — Yahoo options-chain activity for an explicit `--tickers` list or the built-in universe; provider coverage may be incomplete.
-- [`catalyst_scan.py`](catalyst_scan.py) (`catalyst-calendar`) — Yahoo earnings dates per ticker for an explicit `--tickers` list or the built-in universe; no local calendar fallback.
-- [`frontier_scan.py`](frontier_scan.py) (`research-frontier`) — latest Yahoo news stories per ticker in recency order for an explicit `--tickers` list or the built-in universe; not ranked by importance.
-- [`screen_tracker.py`](screen_tracker.py) (`screen-history`, optional) — outcome tracker (not a candidate screener): returns since prior meta-screen flags vs SPY.
+- [`meta_screen.py`](screeners/meta_signals/meta_screen.py) (`meta-*` families) — deterministic 47-check cross-signal breadth screen over a curated universe, split into 8 family screens via named check subsets; each exports its top ranking.
+- [`rotation_screen.py`](screeners/discovery/rotation_screen.py) (`fundamental-rotation`) — ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.
+- [`growth_momentum.py`](screeners/discovery/growth_momentum.py) (`revenue-growth-momentum`) — each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.
+- [`sector_rotation.py`](screeners/market_context/sector_rotation.py) (`sector-rotation`) — sector ETF performance over short and medium horizons.
+- [`breadth_rotation.py`](screeners/market_context/breadth_rotation.py) (`market-breadth`) — share of names above a 10-month moving average, positive 3-month returns, and median theme returns from Yahoo daily closes.
+- [`volatility_regime.py`](screeners/market_context/volatility_regime.py) (`volatility-regime`) — VIX term structure and volatility-regime classification.
+- [`market_sentiment.py`](screeners/market_context/market_sentiment.py) (`market-sentiment`) — VIX, put/call, and Fear & Greed proxy.
+- [`commodities_fx.py`](screeners/market_context/commodities_fx.py) (`commodities-fx`) — commodity prices and FX rates.
+- [`cot_report.py`](screeners/market_context/cot_report.py) (`cot-futures-proxy`) — futures positioning via a yfinance proxy (not official CFTC data).
+- [`analyst_scan.py`](screeners/company_signals/analyst_scan.py) (`analyst-consensus`) — sell-side consensus (recommendation, targets, analyst count) from Yahoo info for an explicit `--tickers` list or the built-in universe.
+- [`short_interest.py`](screeners/company_signals/short_interest.py) (`short-interest`) — ranks tickers by Yahoo short percentage of float for an explicit `--tickers` list or the built-in universe.
+- [`dividend_analysis.py`](screeners/company_signals/dividend_analysis.py) (`dividend-analysis`) — ranks tickers by Yahoo dividend yield and payout context for an explicit `--tickers` list or the built-in universe.
+- [`unusual_options.py`](screeners/company_signals/unusual_options.py) (`options-activity`) — Yahoo options-chain activity for an explicit `--tickers` list or the built-in universe; provider coverage may be incomplete.
+- [`catalyst_scan.py`](screeners/events/catalyst_scan.py) (`catalyst-calendar`) — Yahoo earnings dates per ticker for an explicit `--tickers` list or the built-in universe; no local calendar fallback.
+- [`frontier_scan.py`](screeners/events/frontier_scan.py) (`research-frontier`) — latest Yahoo news stories per ticker in recency order for an explicit `--tickers` list or the built-in universe; not ranked by importance.
+- [`screen_tracker.py`](screeners/tracking/screen_tracker.py) (`screen-history`, optional) — outcome tracker (not a candidate screener): returns since prior meta-screen flags vs SPY.
 
 ## Market and risk analysis (stored price/fundamentals layer, offline)
 

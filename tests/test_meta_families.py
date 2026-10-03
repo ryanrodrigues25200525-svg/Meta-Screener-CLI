@@ -43,7 +43,7 @@ class TestMetaFamilyScreeners(unittest.TestCase):
             self.assertIn(family_id, by_id, f"missing family screener {family_id}")
             entry = by_id[family_id]
             self.assertTrue(entry["yahoo"], family_id)
-            self.assertEqual(entry["file"], "meta_screen.py")
+            self.assertEqual(entry["file"], "screeners/meta_signals/meta_screen.py")
             args = entry.get("args", [])
             checks = [args[i + 1] for i, a in enumerate(args[:-1]) if a == "--check"]
             self.assertEqual(len(checks), expected_count, family_id)

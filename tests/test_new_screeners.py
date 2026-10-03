@@ -13,7 +13,7 @@ def _frame(rows, cols):
 
 class SmartMoneyTests(unittest.TestCase):
     def test_ranks_by_institutional_pct(self):
-        import smart_money
+        from screeners.company_signals import smart_money
 
         holders = _frame(
             [["BlackRock", 100, "2026-09-30", 0.08, 1000]],
@@ -32,7 +32,7 @@ class SmartMoneyTests(unittest.TestCase):
         self.assertIn("blank", payload["top"][1]["detail"].lower())
 
     def test_blank_when_no_holders(self):
-        import smart_money
+        from screeners.company_signals import smart_money
 
         class Fake:
             def get_holders(self, ticker):
@@ -44,7 +44,7 @@ class SmartMoneyTests(unittest.TestCase):
         self.assertIn("blank", payload["top"][0]["detail"].lower())
 
     def test_pctheld_column_variant(self):
-        import smart_money
+        from screeners.company_signals import smart_money
 
         holders = _frame(
             [["BlackRock", 0.0797], ["Vanguard", 0.0657]],
@@ -59,7 +59,7 @@ class SmartMoneyTests(unittest.TestCase):
             smart_money.screen_tickers(["AAPL"], provider=Fake()), "r"
         )
         self.assertAlmostEqual(float(payload["top"][0]["detail"].split("%")[0].split()[-1]), 14.5, places=1)
-        import smart_money
+        from screeners.company_signals import smart_money
 
         class Fake:
             def get_holders(self, ticker):
@@ -73,7 +73,7 @@ class SmartMoneyTests(unittest.TestCase):
 
 class InsiderActivityTests(unittest.TestCase):
     def test_text_column_fallback_and_grant_filter(self):
-        import insider_activity
+        from screeners.company_signals import insider_activity
 
         rows = _frame(
             [["X", "CEO", None, 100, 10000, "2026-09-01", "Direct",
@@ -93,7 +93,7 @@ class InsiderActivityTests(unittest.TestCase):
         self.assertEqual(data[0]["buyers"], 0)
 
     def test_cluster_buys_rank_first(self):
-        import insider_activity
+        from screeners.company_signals import insider_activity
 
         buys = _frame(
             [["A. Exec", "CEO", "Purchase", 1000, 100000, "2026-09-01", "Direct"],
@@ -115,7 +115,7 @@ class InsiderActivityTests(unittest.TestCase):
 
 class AltmanZTests(unittest.TestCase):
     def test_z_score_and_zones(self):
-        import altman_z
+        from screeners.company_signals import altman_z
 
         income = _frame(
             [[100.0, 90.0], [1000.0, 900.0]],
@@ -144,7 +144,7 @@ class AltmanZTests(unittest.TestCase):
         self.assertIn("grey", payload["top"][0]["detail"].lower())
 
     def test_blank_on_missing_statements(self):
-        import altman_z
+        from screeners.company_signals import altman_z
 
         class Fake:
             def get_financials(self, ticker, kind="income"):
@@ -161,7 +161,7 @@ class AltmanZTests(unittest.TestCase):
 
 class CashReturnTests(unittest.TestCase):
     def test_buyback_outflow_reports_positive_yield(self):
-        import cash_return
+        from screeners.company_signals import cash_return
 
         cf = _frame(
             [[100.0], [-20.0]],
@@ -182,7 +182,7 @@ class CashReturnTests(unittest.TestCase):
         self.assertIn("buyback 2.0%", payload["top"][0]["detail"])
 
     def test_fcf_and_buyback_yields(self):
-        import cash_return
+        from screeners.company_signals import cash_return
 
         cf = _frame(
             [[100.0, 90.0], [20.0, 10.0]],
@@ -206,7 +206,7 @@ class CashReturnTests(unittest.TestCase):
 
 class DividendGrowthTests(unittest.TestCase):
     def test_streak_counts_consecutive_annual_increases(self):
-        import dividend_growth
+        from screeners.company_signals import dividend_growth
         import pandas as pd
 
         divs = pd.Series(

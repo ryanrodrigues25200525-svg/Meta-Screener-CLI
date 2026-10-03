@@ -21,7 +21,7 @@ Requires: yfinance (via yahoo_client); officecli (for the xlsx step) at
 import argparse, glob, json, os, re, shutil, subprocess, sys, tempfile, time
 from datetime import date, datetime
 
-FINANCE_AI = os.path.dirname(os.path.abspath(__file__))
+FINANCE_AI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, FINANCE_AI)
 
 

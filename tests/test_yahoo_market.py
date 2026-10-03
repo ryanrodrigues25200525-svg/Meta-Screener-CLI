@@ -47,14 +47,14 @@ class FakeYahoo:
 
 class BreadthYahooTests(unittest.TestCase):
     def test_breadth_uses_yahoo_prices_not_local_files(self):
-        import breadth_rotation
+        from screeners.market_context import breadth_rotation
 
         with patch("yahoo_client.get_history", return_value=fake_prices()):
             result = breadth_rotation.compute_breadth(["AAPL", "MSFT"])
         self.assertIn("breadth", result["summary"].lower())
 
     def test_breadth_with_injected_provider_and_blank_on_missing(self):
-        import breadth_rotation
+        from screeners.market_context import breadth_rotation
 
         provider = FakeYahoo({"AAPL": fake_prices()})
         result = breadth_rotation.compute_breadth(["AAPL", "MSFT"], provider=provider)
@@ -64,7 +64,7 @@ class BreadthYahooTests(unittest.TestCase):
         self.assertIn("blank", result["summary"].lower())
 
     def test_breadth_works_with_temp_dirs_and_stub_provider(self):
-        import breadth_rotation
+        from screeners.market_context import breadth_rotation
 
         with tempfile.TemporaryDirectory() as tmp:
             old_cwd = os.getcwd()
@@ -80,7 +80,7 @@ class BreadthYahooTests(unittest.TestCase):
     def test_breadth_does_not_read_kg_or_call_yfinance_directly(self):
         import pathlib
 
-        src = pathlib.Path("breadth_rotation.py").read_text(encoding="utf-8")
+        src = pathlib.Path("screeners/market_context/breadth_rotation.py").read_text(encoding="utf-8")
         for banned in ("prices_monthly", "Themes", "/documents/", "KG_ROOT", "VAULT",
                        "KG_VAULT", "import yfinance", "from yfinance",
                        "yfinance.Ticker", "yf.Ticker(", "glob.glob"):
@@ -89,7 +89,7 @@ class BreadthYahooTests(unittest.TestCase):
 
 class MetaOverlapYahooTests(unittest.TestCase):
     def test_meta_universe_defaults_without_kg_and_accepts_csv_selection(self):
-        import meta_screen
+        from screeners.meta_signals import meta_screen
 
         with tempfile.TemporaryDirectory() as tmp:
             old_cwd = os.getcwd()
@@ -106,7 +106,7 @@ class MetaOverlapYahooTests(unittest.TestCase):
                 os.chdir(old_cwd)
 
     def test_meta_theme_rotation_uses_yahoo_provider(self):
-        import meta_screen
+        from screeners.meta_signals import meta_screen
 
         provider = FakeYahoo({
             "SPY": fake_prices(start=400.0),
@@ -119,7 +119,7 @@ class MetaOverlapYahooTests(unittest.TestCase):
     def test_meta_does_not_use_kg_links_or_yfinance_directly(self):
         import pathlib
 
-        src = pathlib.Path("meta_screen.py").read_text(encoding="utf-8")
+        src = pathlib.Path("screeners/meta_signals/meta_screen.py").read_text(encoding="utf-8")
         for banned in ("kg_links", "load_ticker_map", "company_link", "UNIVERSE_FILE",
                        "import yfinance", "from yfinance",
                        "yfinance.Ticker", "yf.Ticker("):

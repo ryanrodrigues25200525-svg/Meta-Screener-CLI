@@ -278,10 +278,10 @@ class ResultTests(unittest.TestCase):
                 command = cli.command_for(screener, "python", 1, 25, 10)
 
         self.assertEqual(command[:8], [
-            "python", str(root / "meta_screen.py"), "--check", "high revenue growth (>20%)",
-            "--check", "cash-backed earnings", "--workers", "1",
+            "python", "-m", "meta_screen", "--check", "high revenue growth (>20%)",
+            "--check", "cash-backed earnings", "--workers",
         ])
-        self.assertEqual(command[-4:], ["--batch-size", "25", "--batch-pause-seconds", "10"])
+        self.assertEqual(command[-5:], ["1", "--batch-size", "25", "--batch-pause-seconds", "10"])
 
 
 class IdValidationTests(unittest.TestCase):
@@ -312,7 +312,8 @@ class IdValidationTests(unittest.TestCase):
 
     def test_plan_mentions_result_wiring(self):
         registry = one_screener_registry()
-        registry["screeners"][0].update({"id": "meta-overlap", "yahoo": True})
+        registry["screeners"][0].update({"id": "meta-overlap", "yahoo": True,
+                                         "file": "screeners/meta_signals/meta_screen.py"})
         args = cli.build_parser().parse_args(
             ["plan", "--screener", "meta-overlap"]
         )

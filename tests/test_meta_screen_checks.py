@@ -20,7 +20,7 @@ def load_meta_screen_module():
             "numpy": types.ModuleType("numpy"),
         }
         with patch.dict(os.environ, {"FINANCE_KG_ROOT": temp_dir}), patch.dict(sys.modules, stubs):
-            return importlib.import_module("meta_screen")
+            return importlib.import_module("screeners.meta_signals.meta_screen")
 
 
 class CheckFilterTests(unittest.TestCase):

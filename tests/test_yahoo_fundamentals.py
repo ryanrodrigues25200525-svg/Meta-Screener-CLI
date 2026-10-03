@@ -54,7 +54,7 @@ def accelerating_quarterly():
 
 class RotationYahooTests(unittest.TestCase):
     def test_rotation_yahoo_financials_with_blank_on_missing(self):
-        import rotation_screen
+        from screeners.discovery import rotation_screen
 
         fake = {"AAPL": accelerating_quarterly(), "MSFT": pd.DataFrame()}
         payload = rotation_screen.build_rotation_payload(
@@ -67,7 +67,7 @@ class RotationYahooTests(unittest.TestCase):
         )
 
     def test_rotation_works_with_temp_dirs_and_stub_provider(self):
-        import rotation_screen
+        from screeners.discovery import rotation_screen
 
         with tempfile.TemporaryDirectory() as tmp:
             env = {k: v for k, v in os.environ.items() if k != "KG_VAULT"}
@@ -85,7 +85,7 @@ class RotationYahooTests(unittest.TestCase):
     def test_rotation_does_not_read_kg_or_call_yfinance_directly(self):
         import pathlib
 
-        src = pathlib.Path("rotation_screen.py").read_text(encoding="utf-8")
+        src = pathlib.Path("screeners/discovery/rotation_screen.py").read_text(encoding="utf-8")
         for banned in ("Companies", "Themes", "fundamentals_", "KG_VAULT",
                        "import yfinance", "from yfinance",
                        "yfinance.Ticker", "yf.Ticker("):
@@ -94,7 +94,7 @@ class RotationYahooTests(unittest.TestCase):
 
 class GrowthMomentumYahooTests(unittest.TestCase):
     def test_growth_yahoo_with_blank_on_missing(self):
-        import growth_momentum
+        from screeners.discovery import growth_momentum
 
         fake = {"AAPL": accelerating_quarterly(), "MSFT": pd.DataFrame()}
         payload = growth_momentum.build_result_payload(
@@ -107,7 +107,7 @@ class GrowthMomentumYahooTests(unittest.TestCase):
         )
 
     def test_growth_works_with_temp_dirs_and_stub_provider(self):
-        import growth_momentum
+        from screeners.discovery import growth_momentum
 
         with tempfile.TemporaryDirectory() as tmp:
             old_cwd = os.getcwd()
@@ -123,7 +123,7 @@ class GrowthMomentumYahooTests(unittest.TestCase):
     def test_growth_does_not_read_kg_or_call_yfinance_directly(self):
         import pathlib
 
-        src = pathlib.Path("growth_momentum.py").read_text(encoding="utf-8")
+        src = pathlib.Path("screeners/discovery/growth_momentum.py").read_text(encoding="utf-8")
         for banned in ("Companies", "Themes", "fundamentals_", "KG_VAULT",
                        "import yfinance", "from yfinance",
                        "yfinance.Ticker", "yf.Ticker("):
@@ -133,8 +133,8 @@ class GrowthMomentumYahooTests(unittest.TestCase):
 class ScreenUniverseTests(unittest.TestCase):
     def test_screens_share_demo_universe(self):
         import demo_universe
-        import growth_momentum
-        import rotation_screen
+        from screeners.discovery import growth_momentum
+        from screeners.discovery import rotation_screen
 
         self.assertEqual(rotation_screen.DEFAULT_TICKERS, demo_universe.ROTATION_TICKERS)
         self.assertEqual(growth_momentum.DEFAULT_TICKERS, demo_universe.GROWTH_TICKERS)
@@ -144,7 +144,7 @@ class ScreenUniverseTests(unittest.TestCase):
 
 class RotationRowsPayloadTests(unittest.TestCase):
     def test_rotation_rows_payload_includes_blanks(self):
-        import rotation_screen
+        from screeners.discovery import rotation_screen
 
         fake = FakeYahoo({"AAPL": accelerating_quarterly(), "MSFT": pd.DataFrame()})
         rows = rotation_screen.screen_tickers(["AAPL", "MSFT"], provider=fake)
@@ -160,7 +160,7 @@ class RotationRowsPayloadTests(unittest.TestCase):
 
 class GrowthSequentialTests(unittest.TestCase):
     def test_growth_rows_payload_recomputes_sequential_with_provider(self):
-        import growth_momentum
+        from screeners.discovery import growth_momentum
 
         fake = FakeYahoo({"AAPL": accelerating_quarterly()})
         rows = growth_momentum.screen_tickers(["AAPL"], provider=fake)
@@ -171,7 +171,7 @@ class GrowthSequentialTests(unittest.TestCase):
         self.assertNotIn("sequential QoQ n/a", payload["top"][0]["detail"])
 
     def test_growth_rows_payload_accepts_sequential_map(self):
-        import growth_momentum
+        from screeners.discovery import growth_momentum
 
         fake = FakeYahoo({"AAPL": accelerating_quarterly()})
         rows = growth_momentum.screen_tickers(["AAPL"], provider=fake)
