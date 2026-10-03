@@ -86,6 +86,7 @@ export function applyEvent(state: DashboardRunState, event: RunEvent): Dashboard
       entry.exitCode = finished.exit_code;
       entry.summary = typeof finished.summary === "string" ? finished.summary : entry.summary;
       entry.reportPath = typeof finished.report_path === "string" ? finished.report_path : entry.reportPath;
+      if (typeof finished.result_error === "string") entry.resultError = finished.result_error;
       const top = sanitizeTop(finished.top);
       if (top) entry.top = top;
       if ((finished.status ?? "") === "ok" && finished.exit_code === 0) {
@@ -125,6 +126,7 @@ export function describeResult(entry: ScreenerRunState | undefined): string {
   }
   if (entry.summary) parts.push(entry.summary);
   else parts.push(entry.status === "ok" ? "Finished OK (no ranked tickers)." : `Finished: ${entry.status}.`);
+  if (entry.resultError) parts.push(`Result: ${entry.resultError}`);
   if (entry.reportPath) parts.push(`Report: ${entry.reportPath}`);
   return parts.join("\n");
 }

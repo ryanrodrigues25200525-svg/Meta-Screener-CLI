@@ -98,4 +98,19 @@ describe("JSON event handling", () => {
     if (event) applyEvent(state, event);
     expect(state.byScreener).toEqual({});
   });
+
+  test("preserves result_error on screener_finished", () => {
+    const state = blankRunState();
+    applyEvent(state, {
+      type: "screener_finished",
+      run_id: "r1",
+      screener_id: "x",
+      status: "result_error",
+      exit_code: 0,
+      result_error: "missing result json",
+    } as never);
+    expect(state.byScreener["x"]!.resultError).toBe("missing result json");
+    const text = describeResult(state.byScreener["x"]);
+    expect(text).toContain("missing result json");
+  });
 });

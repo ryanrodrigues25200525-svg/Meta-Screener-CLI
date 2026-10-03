@@ -65,6 +65,7 @@ export interface ScreenerFinishedEvent extends BaseEvent {
   summary?: string;
   report_path?: string;
   top?: TopRow[];
+  result_error?: string;
 }
 
 export interface RunFinishedEvent extends BaseEvent {
@@ -93,6 +94,7 @@ export interface ScreenerRunState {
   summary?: string;
   reportPath?: string;
   top?: TopRow[];
+  resultError?: string;
   log: string[];
 }
 

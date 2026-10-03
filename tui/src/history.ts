@@ -115,6 +115,7 @@ function toDisplayState(
     if (typeof row.summary === "string") event.summary = row.summary;
     if (typeof row.report_path === "string") event.report_path = row.report_path;
     if (Array.isArray(row.top)) event.top = row.top as ScreenerFinishedEvent["top"];
+    if (typeof row.result_error === "string") event.result_error = row.result_error;
     applyEvent(state, event);
   }
   return state;
