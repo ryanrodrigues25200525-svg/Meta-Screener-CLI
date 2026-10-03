@@ -15,7 +15,7 @@
 - Use only OpenCode Go models `opencode-go/muse-spark-1.3-contributor` and `opencode-go/deepseek-v4.1-flash` for delegated implementation/review.
 - Keep work on `codex/meta-screener-polish`; prepare a PR for review and do not merge to `main`.
 - Preserve the original checkout and its untracked `.DS_Store`.
-- Keep Yahoo-backed work sequential, use one worker, 25-symbol batches and at least a 10-second inter-batch pause for the live validation run; stop on rate-limit detection without retrying.
+- Keep Yahoo-backed work sequential, use one worker, the runner defaults of 8-symbol batches and a 15-second pause for the live validation run, and stop on rate-limit detection without retrying.
 - Set `FINANCE_KG_ROOT` to a temporary directory for the live run. Do not write validation output into the user's Finance Knowledge Graph.
 - Save runtime summaries and result artifacts under `.meta-screener/`, and keep that directory ignored by Git.
 - MCP may update `screeners.json`, but may not write arbitrary Python source or delete source files.
@@ -95,7 +95,7 @@
 - [ ] Add the optional `mcp>=2,<3` extra and `meta-screener-mcp` entry point in `pyproject.toml`; align project metadata at `0.3.0`. Add `.meta-screener/` and `.DS_Store` ignore rules in `.gitignore`.
 - [ ] Update `screeners.json` to version `0.3.0` and update the README so bare `meta-screener` launches the TUI, direct commands remain documented, and Bun setup is clear.
 - [ ] Finalize the changelog entry, include `.superpowers/` and `tui/node_modules/` ignore rules plus exceptions for tracked TUI JSON manifests, and catalog any new tracked Python files added by the runner, MCP server, and tests.
-- [ ] Run the real default-universe `meta-overlap` workflow from the TUI through JSON Lines with one worker, batch size 25, and a 10-second inter-batch pause. Set `FINANCE_KG_ROOT` to a temporary directory; capture the actual ticker ranking, check it matches the saved JSON result, and stop immediately if Yahoo returns a rate limit.
+- [ ] Run the real default-universe `meta-overlap` workflow from the TUI through JSON Lines with one worker, the CLI defaults of batch size 8 and a 15-second pause. Set `FINANCE_KG_ROOT` to a temporary directory; capture the actual ticker ranking, check it matches the saved JSON result, and stop immediately if Yahoo returns a rate limit.
 - [ ] Launch MCP over stdio and confirm the tool list and registry operations work against an isolated copy of `screeners.json`.
 - [ ] Inspect final TUI behavior at normal and narrow widths, status/error handling, terminal cleanup, docs, changelog, version files, and final Git diff.
 - [ ] Commit coherent changes to `codex/meta-screener-polish`, push the feature branch, and open a PR for user review. Do not merge to `main`; only create/push a `v0.3.0` tag if the user confirms the PR is ready to release.
