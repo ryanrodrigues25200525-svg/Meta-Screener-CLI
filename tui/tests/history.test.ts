@@ -66,7 +66,7 @@ describe("registry-order alignment", () => {
 describe("startup default selection", () => {
   test("preselects only the first default-enabled workflow", () => {
     expect(SelectionModel.fromRegistry(SHUFFLED).selectedIds()).toEqual(["zeta-screen"]);
-    expect(SelectionModel.fromRegistry(registry).selectedIds()).toEqual(["meta-overlap"]);
+    expect(SelectionModel.fromRegistry(registry).selectedIds()).toEqual(["fundamental-rotation"]);
   });
 
   test("empty selection when no workflow is default-enabled", () => {

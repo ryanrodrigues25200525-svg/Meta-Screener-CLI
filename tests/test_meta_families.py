@@ -21,6 +21,17 @@ EXPECTED_FAMILIES = {
 
 
 class TestMetaFamilyScreeners(unittest.TestCase):
+    def test_families_grouped_in_meta_signals_stage(self):
+        import meta_screener_cli as cli
+
+        registry = cli.read_registry()
+        stage_ids = [s["id"] for s in registry["stages"]]
+        self.assertIn("meta-signals", stage_ids)
+        by_id = {item["id"]: item for item in registry["screeners"]}
+        self.assertEqual(by_id["meta-overlap"]["stage"], "meta-signals")
+        for family_id in EXPECTED_FAMILIES:
+            self.assertEqual(by_id[family_id]["stage"], "meta-signals", family_id)
+
     def test_family_entries_reference_real_checks(self):
         import meta_screener_cli as cli
 

@@ -18,15 +18,15 @@ describe("workflow selection", () => {
     expect(defaultEnabledIds(registry)).toHaveLength(23);
   });
 
-  test("groups preserve the five registry stages", () => {
+  test("groups preserve the six registry stages", () => {
     const groups = groupByStage(registry);
-    expect(groups.map((g) => g.id)).toEqual(["discovery", "market-context", "company-signals", "events", "tracking"]);
+    expect(groups.map((g) => g.id)).toEqual(["discovery", "meta-signals", "market-context", "company-signals", "events", "tracking"]);
     expect(groups.reduce((n, g) => n + g.screeners.length, 0)).toBe(24);
   });
 
   test("selection preselects only the first default and wraps navigation", () => {
     const model = SelectionModel.fromRegistry(registry);
-    expect(model.selectedIds()).toEqual(["meta-overlap"]);
+    expect(model.selectedIds()).toEqual(["fundamental-rotation"]);
     expect(model.selected.has("screen-history")).toBe(false);
     model.moveTo(0);
     model.move(-1);
@@ -39,13 +39,13 @@ describe("workflow selection", () => {
     const model = SelectionModel.fromRegistry(registry);
     model.clear();
     expect(model.selectedIds()).toEqual([]);
-    model.toggle("meta-overlap");
+    model.toggle("fundamental-rotation");
     model.toggle("sector-rotation");
     // Stage order: discovery before market-context regardless of toggle order.
     model.clear();
     model.toggle("sector-rotation");
-    model.toggle("meta-overlap");
-    expect(model.selectedIds()).toEqual(["meta-overlap", "sector-rotation"]);
+    model.toggle("meta-momentum");
+    expect(model.selectedIds()).toEqual(["meta-momentum", "sector-rotation"]);
     model.selectAll();
     expect(model.count()).toBe(24);
     model.selectDefaults();

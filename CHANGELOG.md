@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--check` filters; `meta-overlap` still runs the full set. Registry grows
   from 16 to 24 entries (23 enabled by default; `screen-history` optional).
 
+- Grouped the 9 meta screeners (`meta-overlap` plus 8 families) into a new
+  `meta-signals` stage so the CLI, TUI, and MCP list them as one category;
+  `discovery` keeps the fundamental screens. Six stages total.
+
 ## [0.4.0] - 2026-10-03
 
 Closes follow-up issues #2 (Yahoo-only screeners), #3 (TUI stderr

@@ -7,6 +7,11 @@
       "description": "Cross-screen overlap and stored-fundamentals screens."
     },
     {
+      "id": "meta-signals",
+      "name": "Meta signal families",
+      "description": "Cross-signal breadth and per-family screens from the 47 built-in meta checks."
+    },
+    {
       "id": "market-context",
       "name": "Market and factor context",
       "description": "Sector, breadth, volatility, sentiment, commodity, FX, and futures context."
@@ -29,10 +34,54 @@
   ],
   "screeners": [
     {
+      "id": "fundamental-rotation",
+      "name": "Fundamental Rotation Screen",
+      "file": "rotation_screen.py",
+      "stage": "discovery",
+      "description": "Ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "rotation_screen.csv"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
+      "id": "revenue-growth-momentum",
+      "name": "Revenue Growth Momentum",
+      "file": "growth_momentum.py",
+      "stage": "discovery",
+      "description": "Compares each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "growth_momentum.csv"
+      ],
+      "default_enabled": true,
+      "args": []
+    },
+    {
       "id": "meta-overlap",
       "name": "Meta Screen: Cross-Signal Breadth",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 47 registered checks across price action, valuation, business quality, earnings, insider activity, and themes. Ranks family breadth and raw hit counts separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -55,7 +104,7 @@
       "id": "meta-momentum",
       "name": "Meta Screen: Momentum",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 4 momentum checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -87,7 +136,7 @@
       "id": "meta-technical",
       "name": "Meta Screen: Technicals",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 4 technical-structure checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -119,7 +168,7 @@
       "id": "meta-valuation",
       "name": "Meta Screen: Valuation",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 5 valuation checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -153,7 +202,7 @@
       "id": "meta-fundamental",
       "name": "Meta Screen: Fundamentals",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 3 fundamental-growth checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -183,7 +232,7 @@
       "id": "meta-theme",
       "name": "Meta Screen: Theme Rotation",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 23 theme-rotation checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -253,7 +302,7 @@
       "id": "meta-insider",
       "name": "Meta Screen: Insider",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the insider cluster-buy check across the curated universe.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -279,7 +328,7 @@
       "id": "meta-earnings",
       "name": "Meta Screen: Earnings Drift",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the earnings-beat-drift check across the curated universe.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -305,7 +354,7 @@
       "id": "meta-quality",
       "name": "Meta Screen: Quality",
       "file": "meta_screen.py",
-      "stage": "discovery",
+      "stage": "meta-signals",
       "description": "Runs the 6 business-quality checks across the curated universe; ranks family breadth separately.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
@@ -336,50 +385,6 @@
         "--check",
         "growth efficiency (revenue up; op/FCF margin +1pp)"
       ]
-    },
-    {
-      "id": "fundamental-rotation",
-      "name": "Fundamental Rotation Screen",
-      "file": "rotation_screen.py",
-      "stage": "discovery",
-      "description": "Ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
-      "provider": "Yahoo Finance via yfinance",
-      "yahoo": true,
-      "requirements": [
-        "yfinance",
-        "pandas",
-        "numpy"
-      ],
-      "reads": [
-        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
-      ],
-      "writes": [
-        "rotation_screen.csv"
-      ],
-      "default_enabled": true,
-      "args": []
-    },
-    {
-      "id": "revenue-growth-momentum",
-      "name": "Revenue Growth Momentum",
-      "file": "growth_momentum.py",
-      "stage": "discovery",
-      "description": "Compares each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
-      "provider": "Yahoo Finance via yfinance",
-      "yahoo": true,
-      "requirements": [
-        "yfinance",
-        "pandas",
-        "numpy"
-      ],
-      "reads": [
-        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
-      ],
-      "writes": [
-        "growth_momentum.csv"
-      ],
-      "default_enabled": true,
-      "args": []
     },
     {
       "id": "sector-rotation",
