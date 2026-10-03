@@ -575,12 +575,15 @@ def run_command(registry: dict[str, Any], args: argparse.Namespace) -> int:
         grouped.setdefault(item["stage"], []).append(item)
     active_stages = [stage for stage in registry["stages"] if stage["id"] in grouped]
     statuses: list[tuple[str, str]] = []
+    result_dir = RUNS_DIR / uuid.uuid4().hex
+    result_dir.mkdir(parents=True, exist_ok=True)
 
     for stage_index, stage in enumerate(active_stages):
         stage_items = grouped[stage["id"]]
         print(f"\n=== {stage['name']} ===", flush=True)
         for item_index, item in enumerate(stage_items):
-            command = command_for(item, args.python, args.workers, args.batch_size, args.gap_seconds)
+            command = command_for(item, args.python, args.workers, args.batch_size,
+                                  args.gap_seconds, result_dir)
             print(f"\n--- Running {item['name']} ({item['file']}) ---", flush=True)
             print(f"Data source: {item['provider']}", flush=True)
             return_code, rate_limited = run_process(command)
@@ -613,7 +616,13 @@ def run_command(registry: dict[str, Any], args: argparse.Namespace) -> int:
     print("\n=== Run summary ===")
     for screener_id, status in statuses:
         print(f"{screener_id:<24} {status}")
-    print("\nRun `metascreener leaderboard` for the cross-screener top 10.")
+    board = compute_leaderboard(result_dir, 10)
+    if board:
+        print("\n=== Leaderboard: most consistent across screeners ===")
+        for rank, (ticker, apps, best) in enumerate(board, 1):
+            print(f"#{rank:<3} {ticker:<6} {apps}x (best #{best})")
+    else:
+        print("\nRun `metascreener leaderboard` for the cross-screener top 10.")
     return 0 if all(status == "ok" for _, status in statuses) else 1
 
 
