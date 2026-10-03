@@ -27,7 +27,7 @@
 - `meta_screen.py`: accept a validated subset of built-in check names for named custom screen profiles and expose a stable top-ranking result for the runner.
 - `rotation_screen.py`, `short_interest.py`, and `dividend_analysis.py`: expose their existing ranked output as optional JSON result rows without changing their legacy reports.
 - `kg_links.py`: make `load_ticker_map(root=...)` resolve Company notes from the supplied root so `FINANCE_KG_ROOT` works for isolated runs.
-- `screeners.json`: remain the versioned source of registered workflow metadata; validate built-in and custom entries.
+- `screeners.json`: remain the versioned source of registered workflow metadata at schema/project version `0.3.0`; validate built-in and custom entries.
 - `screener_mcp.py`: expose the shared runner and safe registry operations over local stdio MCP.
 - `tui/`: contain the Bun/OpenTUI terminal application; it renders events and never starts screen scripts directly.
 - `tests/`: contain focused stdlib Python tests and Bun tests using the project's supported OpenTUI test surface.
@@ -93,7 +93,8 @@
 - [ ] Review every subagent diff for spec compliance, unrelated changes, registry safety, terminal cleanup, and dependency lock integrity; request focused fixes if needed.
 - [ ] Run the complete Python and Bun test suites, static checks, package metadata checks, and `git diff --check`.
 - [ ] Add the optional `mcp>=2,<3` extra and `meta-screener-mcp` entry point in `pyproject.toml`; align project metadata at `0.3.0`. Add `.meta-screener/` and `.DS_Store` ignore rules in `.gitignore`.
-- [ ] Finalize the changelog entry and catalog any new tracked Python files added by the runner, MCP server, and tests.
+- [ ] Update `screeners.json` to version `0.3.0` and update the README so bare `meta-screener` launches the TUI, direct commands remain documented, and Bun setup is clear.
+- [ ] Finalize the changelog entry, include `.superpowers/` and `tui/node_modules/` ignore rules plus exceptions for tracked TUI JSON manifests, and catalog any new tracked Python files added by the runner, MCP server, and tests.
 - [ ] Run the real default-universe `meta-overlap` workflow from the TUI through JSON Lines with one worker, batch size 25, and a 10-second inter-batch pause. Set `FINANCE_KG_ROOT` to a temporary directory; capture the actual ticker ranking, check it matches the saved JSON result, and stop immediately if Yahoo returns a rate limit.
 - [ ] Launch MCP over stdio and confirm the tool list and registry operations work against an isolated copy of `screeners.json`.
 - [ ] Inspect final TUI behavior at normal and narrow widths, status/error handling, terminal cleanup, docs, changelog, version files, and final Git diff.
