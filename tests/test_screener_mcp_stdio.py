@@ -25,8 +25,15 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from mcp import Client
-from mcp.client.stdio import StdioServerParameters
+try:
+    from mcp import Client
+    from mcp.client.stdio import StdioServerParameters
+
+    HAS_MCP = True
+except ImportError:  # pragma: no cover - missing optional extra
+    Client = None  # type: ignore[assignment,misc]
+    StdioServerParameters = None  # type: ignore[assignment,misc]
+    HAS_MCP = False
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -130,6 +137,7 @@ def sample_registry() -> dict[str, Any]:
 
 
 class ScreenerMcpStdioIntegrationTests(unittest.TestCase):
+    @unittest.skipUnless(HAS_MCP, "requires optional mcp extra: pip install 'meta-screener-cli[mcp]'")
     def test_stdio_server_end_to_end(self) -> None:
         asyncio.run(self._scenario())
 

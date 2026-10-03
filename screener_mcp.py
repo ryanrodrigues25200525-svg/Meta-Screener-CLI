@@ -18,15 +18,10 @@ import sys
 import tempfile
 from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-try:  # Official MCP Python SDK v2 line.
+if TYPE_CHECKING:  # pragma: no cover - type checking only, never at runtime
     from mcp.server import MCPServer
-except ImportError as exc:  # pragma: no cover - exercised only without the extra.
-    raise ImportError(
-        "screener_mcp requires the optional MCP Python SDK v2 extra. "
-        "Install it with: pip install 'meta-screener-cli[mcp]' (mcp>=2,<3)."
-    ) from exc
 
 
 ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
@@ -519,8 +514,15 @@ def _resolve_repo_file(root: Path, file: Any) -> Path:
 # ---------------------------------------------------------------------------
 # MCP server
 # ---------------------------------------------------------------------------
-def build_server() -> MCPServer:
+def build_server() -> Any:
     """Build the stdio MCP server exposing the registry management tools."""
+    try:  # Official MCP Python SDK v2 line.
+        from mcp.server import MCPServer
+    except ImportError as exc:
+        raise ImportError(
+            "screener_mcp requires the optional MCP Python SDK v2 extra. "
+            "Install it with: pip install 'meta-screener-cli[mcp]' (mcp>=2,<3)."
+        ) from exc
     server = MCPServer(
         name="meta-screener",
         instructions=(
