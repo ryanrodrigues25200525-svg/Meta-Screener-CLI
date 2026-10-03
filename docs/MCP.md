@@ -37,6 +37,8 @@ The server runs over local stdio transport (`build_server().run("stdio")` in `sc
 ## OpenCode configuration
 
 Configure under `mcp.servers` with `type: "local"`. Use an absolute binary path.
+See the [OpenCode local MCP server configuration](https://opencode.ai/v2/docs/mcp-servers)
+reference for other process options.
 
 ```jsonc
 // opencode.jsonc

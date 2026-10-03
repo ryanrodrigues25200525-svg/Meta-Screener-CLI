@@ -65,3 +65,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keyboard controls, direct CLI selection, Yahoo pacing and cooldowns, the
   optional MCP stdio setup, and local-data limits (portfolio, watchlists,
   credentials, and generated history stay out of the repository).
+
+### Fixed
+
+- `kg_links.company_link` now honors an explicitly supplied empty ticker map
+  instead of falling back to the user's default Finance Knowledge Graph index,
+  keeping isolated runs within their configured data root.
