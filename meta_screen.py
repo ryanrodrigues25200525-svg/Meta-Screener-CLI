@@ -5,47 +5,46 @@ Deterministic multi-category meta-screen — Stoic Point style.
 Runs overlapping market, valuation, fundamental, event, and theme checks over
 a curated universe. Rankings use breadth across signal families; raw check
 counts remain visible but are not treated as independent confirmations.
-Inputs come from yfinance; no LLM-generated signals are used.
+Inputs come from Yahoo Finance via yahoo_client (the only allowed Yahoo
+path); no LLM-generated signals are used.
+
+The built-in universe (or --universe CSV) is a symbol-selection input only;
+every fact (history/info/insider/earnings/financials) is supplied by Yahoo.
+No Knowledge Graph reads.
 
 Usage:
     python3 meta_screen.py [--universe universe.csv] [--top N]
         [--workers 1..4] [--batch-size N] [--batch-pause-seconds 10..30]
 
-Writes: ~/Documents/Finance Knowledge Graph/Notes/<today> Meta-Screen.md
-Also updates this repo's rotation_history.csv
+Writes: run-record note to the notes dir (see KG_NOTES below; local
+``reports/Notes`` unless FINANCE_KG_ROOT points at an existing vault).
+Also updates this repo's rotation_history.csv (run record)
 """
-import os, sys, csv, glob, json, argparse, tempfile, time
+import os, sys, csv, json, argparse, tempfile, time
 from datetime import date, datetime
 
-try:
-    import yfinance as yf
-    import pandas as pd
-    import numpy as np
-except Exception as e:  # pragma: no cover
-    print(f"FATAL: need yfinance/pandas/numpy: {e}")
-    sys.exit(1)
+import pandas as pd
+import numpy as np
 
-# Import shared resolver from this same folder.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import kg_links  # noqa: E402
+import yahoo_client  # noqa: E402  (only allowed Yahoo path)
 
-def _first_dir(*paths):
-    for p in paths:
-        if os.path.isdir(p):
-            return p
-    return paths[0]
-
-
-KG_ROOT = os.environ.get("FINANCE_KG_ROOT") or _first_dir(
-    "/documents/Finance Knowledge Graph",
-    os.path.expanduser("~/Documents/Finance Knowledge Graph"),
-)
-KG_NOTES = os.path.join(KG_ROOT, "Notes")
 FINANCE_AI = os.path.dirname(os.path.abspath(__file__))
-UNIVERSE_FILE = os.path.join(FINANCE_AI, "universe.csv")
+
+
+def _default_kg_root():
+    configured = os.environ.get("FINANCE_KG_ROOT")
+    if configured:
+        return configured
+    return os.path.join(FINANCE_AI, "reports")
+
+
+KG_ROOT = _default_kg_root()
+KG_NOTES = os.path.join(KG_ROOT, "Notes")
 ROTATION_CSV = os.path.join(FINANCE_AI, "rotation_history.csv")
 
-# Default curated universe (ticker, name, theme) — superset; universe.csv overrides.
+# Default curated universe (ticker, name, theme): symbol-selection input
+# only — an optional --universe CSV overrides it. Every screen fact comes
+# from Yahoo; membership here implies nothing about a company.
 _DEMO_TICKERS = """
 AAPL MSFT NVDA AMZN GOOGL GOOG META AVGO ORCL CRM
 AMD INTC CSCO IBM QCOM TXN AMAT MU LRCX KLAC
@@ -62,6 +61,9 @@ DEFAULT_UNIVERSE = [(ticker, ticker, "demo") for ticker in _DEMO_TICKERS]
 
 
 
+# Theme baskets: (benchmark ETF, member symbols) are symbol-selection inputs
+# only. Basket hot/not-hot status is computed from Yahoo ETF histories;
+# nothing is read from Theme notes.
 THEME_ETFS = {
     "semis/AI": ("SMH", ["NVDA", "AMD", "AVGO", "MU", "AEHR", "SMCI", "TSM", "ASML", "ARM", "ANET"]),
     "small-cap value": ("IWM", ["AVUV"]),
@@ -92,15 +94,15 @@ BENCH = "SPY"
 
 
 class ScreenCtx:
-    """Per-symbol context wrapping price history + yfinance info + theme-hot map."""
+    """Per-symbol context wrapping Yahoo price history + info + theme-hot map."""
     def __init__(self, symbol, series, info, theme_hot, insider=None, earnings=None, fin=None, volume=None):
         self.symbol = symbol
         self.s = series  # pandas Series indexed by date, sorted asc
         self.volume = volume
         self.info = info or {}
         self.theme_hot = theme_hot
-        self.insider = insider      # DataFrame from Ticker.insider_transactions
-        self.earnings = earnings    # DataFrame from Ticker.get_earnings_dates
+        self.insider = insider      # insider-transaction frame from Yahoo (or None)
+        self.earnings = earnings    # earnings-dates frame from Yahoo (or None)
         self.fin = fin              # tuple: (balance_sheet, income_stmt, cashflow)
         self.peer_value_result = None
 
@@ -759,6 +761,10 @@ def core_hit_count(hits):
 
 
 def load_universe(path):
+    """Selection input only: optional CSV of (ticker, name, theme) rows.
+
+    Defaults to the built-in curated universe; no Knowledge Graph reads.
+    """
     if path and os.path.exists(path):
         rows = []
         with open(path, newline="", encoding="utf-8") as f:
@@ -769,21 +775,56 @@ def load_universe(path):
     return DEFAULT_UNIVERSE
 
 
+def _client_for(provider):
+    """Return a YahooClient-compatible object (injected stub or live client)."""
+    if provider is None:
+        return yahoo_client
+    if hasattr(provider, "get_history") and hasattr(provider, "get_info"):
+        return provider
+    if callable(provider):
+        return yahoo_client.YahooClient(provider=provider)
+    raise TypeError("provider must be a YahooClient, a stub with "
+                    "get_history/get_info, or a provider callable")
+
+
+def _closes_from_history(frame):
+    """Close series from a Yahoo history frame; None when unavailable."""
+    try:
+        if frame is None or getattr(frame, "empty", True):
+            return None
+        columns = list(getattr(frame, "columns", []) or [])
+        lowered = {str(c).strip().lower(): c for c in columns}
+        key = next((lowered[name] for name in ("close", "adj close") if name in lowered), None)
+        series = frame[key].dropna() if key is not None else frame.iloc[:, 0].dropna()
+        return series if len(series) else None
+    except Exception:
+        return None
+
+
 def _is_yahoo_rate_limit(message):
     text = str(message).lower()
     return any(token in text for token in ("429", "too many requests", "rate limit", "yfratelimit"))
 
 
-def theme_rotation(batch_size=8, pause_seconds=15):
-    """Return (theme -> hot/unavailable, rate_limited) with cooldowns between ETF batches."""
+def theme_rotation(batch_size=8, pause_seconds=15, provider=None):
+    """Return (theme -> hot/unavailable, rate_limited) with cooldowns between ETF batches.
+
+    Basket status comes from Yahoo ETF histories via ``yahoo_client``;
+    a stub ``provider`` may be injected for tests.
+    """
+    client = _client_for(provider)
     hot = {}
     rate_limited = False
     try:
-        sp = yf.Ticker(BENCH).history(period="6mo", auto_adjust=False)["Close"]
-        sp1 = float(sp.iloc[-1] / sp.iloc[-22] - 1) if len(sp) > 22 else None
-    except Exception as exc:
+        frame = client.get_history(BENCH, "6mo")
+        sp = _closes_from_history(frame)
+        sp1 = float(sp.iloc[-1] / sp.iloc[-22] - 1) if sp is not None and len(sp) > 22 else None
+    except RuntimeError:
         sp1 = None
-        rate_limited = _is_yahoo_rate_limit(exc)
+        rate_limited = True
+    except Exception:
+        sp1 = None
+        rate_limited = False
     themes = list(THEME_ETFS.items())
     for index, (theme, (etf, _members)) in enumerate(themes):
         if rate_limited:
@@ -793,16 +834,19 @@ def theme_rotation(batch_size=8, pause_seconds=15):
             hot[theme] = None
             continue
         try:
-            e = yf.Ticker(etf).history(period="6mo", auto_adjust=False)["Close"]
-            if len(e) < 66:
+            frame = client.get_history(etf, "6mo")
+            e = _closes_from_history(frame)
+            if e is None or len(e) < 66:
                 hot[theme] = None
                 continue
             m1 = float(e.iloc[-1] / e.iloc[-22] - 1)
             m3 = float(e.iloc[-1] / e.iloc[-66] - 1)
             hot[theme] = (m1 - sp1 > 0.02) and (m3 > 0)
-        except Exception as exc:
+        except RuntimeError:
             hot[theme] = None
-            rate_limited = _is_yahoo_rate_limit(exc)
+            rate_limited = True
+        except Exception:
+            hot[theme] = None
         if (
             not rate_limited
             and pause_seconds
@@ -820,7 +864,8 @@ def theme_rotation(batch_size=8, pause_seconds=15):
 def main():
     global SCREENS
     ap = argparse.ArgumentParser()
-    ap.add_argument("--universe", default=UNIVERSE_FILE if os.path.isfile(UNIVERSE_FILE) else None)
+    ap.add_argument("--universe", default=None,
+                    help="optional CSV of (ticker, name, theme) rows used as selection input only")
     ap.add_argument("--top", type=int, default=30)
     ap.add_argument("--check", action="append", default=[],
                     help="run only this registered check; repeat to select multiple")
@@ -848,9 +893,11 @@ def main():
         if args.universe and os.path.exists(args.universe) and universe != DEFAULT_UNIVERSE
         else "curated default"
     )
+    client = _client_for(None)
     theme_hot, theme_rate_limited = theme_rotation(
         batch_size=args.batch_size,
         pause_seconds=args.batch_pause_seconds,
+        provider=client,
     )
     if theme_rate_limited:
         print("Yahoo rate limit detected during theme fetch; stopping before writing a partial screen.")
@@ -858,53 +905,67 @@ def main():
 
     bench = None
     try:
-        b = yf.Ticker(BENCH).history(period="18mo", auto_adjust=False)["Close"]
-        bench = ScreenCtx(BENCH, b, {}, theme_hot)
-    except Exception as exc:
-        if _is_yahoo_rate_limit(exc):
-            print("Yahoo rate limit detected during benchmark fetch; stopping before writing a partial screen.")
-            raise SystemExit(2)
+        bench_close = _closes_from_history(client.get_history(BENCH, "18mo"))
+        bench = ScreenCtx(BENCH, bench_close, {}, theme_hot) if bench_close is not None else None
+    except RuntimeError:
+        print("Yahoo rate limit detected during benchmark fetch; stopping before writing a partial screen.")
+        raise SystemExit(2)
+    except Exception:
         bench = None
 
     from concurrent.futures import ThreadPoolExecutor
 
     def _build_ctx(sym):
         errors = []
-        try:
-            tk = yf.Ticker(sym)
-        except Exception as e:
-            return sym, ScreenCtx(sym, None, {}, theme_hot), [f"ticker init: {e}"]
-
         history = None
         try:
-            history = tk.history(period="18mo", auto_adjust=False)
+            history = client.get_history(sym, "18mo")
+        except RuntimeError:
+            raise
         except Exception as e:
             errors.append(f"price history: {e}")
-        close = history["Close"].dropna() if history is not None and "Close" in history else None
-        volume = history["Volume"].reindex(close.index) if close is not None and "Volume" in history else None
+        close = _closes_from_history(history)
+        volume = None
+        try:
+            if history is not None and close is not None and "Volume" in getattr(history, "columns", []):
+                volume = history["Volume"].reindex(close.index)
+        except Exception:
+            volume = None
 
         info = {}
         try:
-            info = tk.info or {}
+            info = client.get_info(sym) or {}
+        except RuntimeError:
+            raise
         except Exception as e:
             errors.append(f"company info: {e}")
         ctx = ScreenCtx(sym, close, info, theme_hot, volume=volume)
+        insider_getter = getattr(client, "get_insider_transactions", None)
+        if callable(insider_getter):
+            try:
+                ctx.insider = insider_getter(sym)
+            except RuntimeError:
+                raise
+            except Exception as e:
+                errors.append(f"insider data: {e}")
+        else:
+            ctx.insider = None
         try:
-            ctx.insider = tk.insider_transactions
-        except Exception as e:
-            errors.append(f"insider data: {e}")
-        try:
-            ctx.earnings = tk.get_earnings_dates(limit=12)
+            ctx.earnings = client.get_earnings_dates(sym)
+        except RuntimeError:
+            raise
         except Exception as e:
             errors.append(f"earnings dates: {e}")
         financials = []
-        for label, getter in (
-            ("balance sheet", lambda: tk.balance_sheet),
-            ("income statement", lambda: tk.income_stmt),
-            ("cash flow", lambda: tk.cashflow),
+        for label, kind in (
+            ("balance sheet", "balance"),
+            ("income statement", "income"),
+            ("cash flow", "cashflow"),
         ):
             try:
-                financials.append(getter())
+                financials.append(client.get_financials(sym, kind))
+            except RuntimeError:
+                raise
             except Exception as e:
                 financials.append(None)
                 errors.append(f"{label}: {e}")
@@ -920,8 +981,15 @@ def main():
     data_errors = []
     for batch_index, start in enumerate(range(0, len(universe_syms), args.batch_size), start=1):
         batch_symbols = universe_syms[start:start + args.batch_size]
-        with ThreadPoolExecutor(max_workers=args.workers) as ex:
-            batch_results = list(ex.map(_build_ctx, batch_symbols))
+        try:
+            with ThreadPoolExecutor(max_workers=args.workers) as ex:
+                batch_results = list(ex.map(_build_ctx, batch_symbols))
+        except RuntimeError:
+            print(
+                f"Yahoo rate limit detected in batch {batch_index}; "
+                "stopping before writing a partial screen."
+            )
+            raise SystemExit(2)
         for sym, ctx, errors in batch_results:
             data[sym] = ctx
             data_errors.extend(f"{sym}: {error}" for error in errors)
@@ -992,9 +1060,13 @@ def main():
         _write_result_json(args.result_json, markdown_rows, args.top, report_path, data)
 
 
-def _append_rotation(today, rotation_by_theme):
-    """Write the current schema atomically and replace today's existing row."""
-    path = ROTATION_CSV
+def _append_rotation(today, rotation_by_theme, path=None):
+    """Append this run's theme counts to the rotation history (run record).
+
+    Writes atomically and replaces today's existing row. ``path`` defaults
+    to the repo-local rotation_history.csv; tests may inject a temp path.
+    """
+    path = path or ROTATION_CSV
     themes = list(rotation_by_theme)
     header = ["date"] + themes + [f"{k}_hot" for k in themes]
     row = [today] + [rotation_by_theme[k][0] for k in themes]
@@ -1080,13 +1152,19 @@ def _format_short_interest(ctx):
 def _write_note(
     today, rows, screen_hits, rotation_by_theme, universe_syms,
     screen_outcomes, data, universe_label, top_count, data_warning_count, screen_error_count,
+    notes_dir=None,
 ):
-    os.makedirs(KG_NOTES, exist_ok=True)
+    """Write the run-record note. Tickers are plain symbols (no KG links).
+
+    ``notes_dir`` defaults to the local run-record notes folder (KG_NOTES);
+    tests may inject a temp directory.
+    """
+    notes_dir = notes_dir or KG_NOTES
+    os.makedirs(notes_dir, exist_ok=True)
     topn = rows[:top_count]
     companies = []
-    tmap = kg_links.load_ticker_map(KG_ROOT)
     for sym, _name, _theme, _hits in topn:
-        companies.append(kg_links.company_link(sym, tmap))
+        companies.append(sym)
     names_hit = sum(1 for _sym, _name, _theme, hits in rows if hits)
     front = (
         "---\n"
@@ -1097,7 +1175,7 @@ def _write_note(
         f'companies: {json.dumps(list(dict.fromkeys(companies)), ensure_ascii=False)}\n'
         f'themes: []\n'
         f'context: ["[[Risk appetite]]"]\n'
-        f'sources: ["[[yfinance]]"]\n'
+        f'sources: ["Yahoo Finance via yahoo_client"]\n'
         f'status: "open"\n'
         f'importance: 5\n'
         f'idea_source: "meta-screen"\n'
@@ -1122,9 +1200,8 @@ def _write_note(
         cats = sorted({SCREENS[h][0] for h in hits})
         covered = sum(screen_outcomes[name].get(sym) is not None for name in core_screens)
         coverage = f"{covered}/{len(core_screens)}"
-        link = kg_links.company_link(sym, tmap)
         body.append(
-            f"| {i} | {link} | {family_breadth(hits)} | {len(hits)} | {coverage} | {', '.join(cats)} |"
+            f"| {i} | {sym} | {family_breadth(hits)} | {len(hits)} | {coverage} | {', '.join(cats)} |"
         )
 
     body.append("\n## Execution and event context — top names only\n")
@@ -1141,7 +1218,7 @@ def _write_note(
         body.append(f"| {sym} | {adv} | {earnings} | {short_pct} |")
 
     body.append("\n## Data and audit notes\n")
-    body.append(f"- {data_warning_count} field-fetch exceptions caught; yfinance can also log missing fields without raising exceptions, so use each check's unavailable count.")
+    body.append(f"- {data_warning_count} field-fetch exceptions caught; Yahoo can also return missing fields without raising exceptions, so use each check's unavailable count.")
     body.append(f"- {screen_error_count} screen-evaluation errors; treated as unavailable.")
     body.append("- Raw screen hits overlap: momentum and technical checks are grouped, as are fundamentals and quality; theme exposure is excluded from family breadth.")
     body.append("- The existing technical checks use 6m/12m momentum, moving averages, RSI, and 52-week levels; these are descriptive signals, not independent confirmation.")
@@ -1170,7 +1247,7 @@ def _write_note(
                 f"{': ' + passers if passers else ''}"
             )
     body.append("\n--\nTotal checks: " + str(len(SCREENS)))
-    title = os.path.join(KG_NOTES, f"{today} Meta-Screen.md")
+    title = os.path.join(notes_dir, f"{today} Meta-Screen.md")
     with open(title, "w", encoding="utf-8") as f:
         f.write(front + "\n".join(body) + "\n")
     print("wrote", title)

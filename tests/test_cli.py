@@ -254,6 +254,16 @@ class ResultTests(unittest.TestCase):
         ])
         self.assertEqual(artifact, result_dir / "rotation.json")
 
+    def test_command_for_rejects_absolute_and_escaping_paths(self):
+        with self.assertRaises(ValueError):
+            cli.command_for({"id": "x", "file": "/abs.py", "args": []}, sys.executable, 1, 8, 15)
+        with self.assertRaises(ValueError):
+            cli.command_for({"id": "x", "file": "../outside.py", "args": []}, sys.executable, 1, 8, 15)
+
+    def test_result_artifact_for_declines_absolute_and_escaping_paths(self):
+        self.assertIsNone(cli.result_artifact_for({"id": "x", "file": "/abs.py"}, Path("/tmp")))
+        self.assertIsNone(cli.result_artifact_for({"id": "x", "file": "../outside.py"}, Path("/tmp")))
+
     def test_custom_profile_arguments_are_passed_without_shell_joining(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

@@ -1,58 +1,110 @@
 #!/usr/bin/env python3
-"""Fetch short interest data for portfolio holdings.
+"""Fetch short interest data from Yahoo Finance.
 
-Usage: python3 short_interest.py [--tickers TICKER1,TICKER2]
-Reads: ~/finance-ai/pm_portfolio.json
-Writes: ~/Documents/Finance Knowledge Graph/Notes/<today> Short-Interest.md
+Yahoo-backed: short-interest fields come from Yahoo Finance ``info`` via
+``yahoo_client`` (the only allowed Yahoo path — never call ``yf.Ticker``
+directly). The ticker list is an explicit ``--tickers`` selection or the
+shared built-in universe; nothing is read from local portfolio files.
+
+Usage:
+    python3 short_interest.py [--tickers TICKER1,TICKER2]
+        [--result-json out/short-interest.json]
 """
-import os, sys, json, tempfile
+
+import argparse
+import json
+import os
+import tempfile
 from datetime import date
-from yahoo_guard import raise_if_yahoo_rate_limit
 
-try:
-    import yfinance as yf
-except Exception as e:
-    print(f"FATAL: need yfinance: {e}")
-    sys.exit(1)
-
-KG_NOTES = os.path.expanduser("~/Documents/Finance Knowledge Graph/Notes")
-PM_FILE = os.path.expanduser("~/finance-ai/pm_portfolio.json")
+from demo_universe import HOLDINGS_TICKERS
 
 
-def load_holdings():
+def _default_notes_dir():
+    override = os.environ.get("SCREEN_NOTES_DIR")
+    if override:
+        return override
+    legacy = os.environ.get("FINANCE_KG_ROOT")
+    if legacy:
+        return os.path.join(legacy, "Notes")
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+
+
+NOTES_DIR = _default_notes_dir()
+
+
+def default_tickers():
+    """Shared built-in universe (selection input only)."""
+    return list(HOLDINGS_TICKERS)
+
+
+def _client_for(provider):
+    """Return a YahooClient-compatible object (injected stub or live client)."""
+    if provider is None:
+        import yahoo_client
+        return yahoo_client
+    if hasattr(provider, "get_info"):
+        return provider
+    if callable(provider):
+        from yahoo_client import YahooClient
+        return YahooClient(provider=provider)
+    raise TypeError("provider must be a YahooClient, a stub with "
+                    "get_info, or a provider callable")
+
+
+def _safe_info(client, ticker):
+    """Yahoo info for one ticker; None when unavailable.
+
+    Rate-limit RuntimeErrors propagate (fail fast); per-ticker gaps are blank.
+    """
     try:
-        with open(PM_FILE) as f:
-            data = json.load(f)
-        return [h.get("ticker") or h.get("symbol") for h in data.get("positions", [])]
+        return client.get_info(ticker)
+    except RuntimeError:
+        raise
     except Exception:
-        return []
+        return None
 
 
-def fetch_short_interest(tickers):
+def fetch_short_interest(tickers, provider=None):
+    """Yahoo short-interest rows for each ticker. One row per ticker."""
+    client = _client_for(provider)
     results = []
-    for ticker in tickers:
+    for tk in tickers:
+        ticker = tk.strip().upper()
+        if not ticker:
+            continue
+        info = _safe_info(client, ticker)
+        if not info:
+            results.append({"ticker": ticker, "blank": True})
+            continue
         try:
-            t = yf.Ticker(ticker)
-            info = t.info
-            si = info.get("shortRatio") or info.get("shortPercentOfFloat")
             si_pct = info.get("shortPercentOfFloat", 0) or 0
             si_ratio = info.get("shortRatio", 0) or 0
             shares_short = info.get("sharesShort", 0) or 0
-            results.append({
-                "ticker": ticker,
-                "short_pct": round(si_pct * 100, 2) if si_pct else 0,
-                "short_ratio": round(si_ratio, 2) if si_ratio else 0,
-                "shares_short": shares_short,
-                "flag": "HIGH" if si_pct and si_pct > 0.20 else "ELEVATED" if si_pct and si_pct > 0.10 else "NORMAL",
-            })
-        except Exception as exc:
-            raise_if_yahoo_rate_limit(exc, f"short-interest fetch for {ticker}")
-            pass
+        except AttributeError:
+            results.append({"ticker": ticker, "blank": True})
+            continue
+        results.append({
+            "ticker": ticker,
+            "short_pct": round(si_pct * 100, 2) if si_pct else 0,
+            "short_ratio": round(si_ratio, 2) if si_ratio else 0,
+            "shares_short": shares_short,
+            "flag": "HIGH" if si_pct and si_pct > 0.20 else "ELEVATED" if si_pct and si_pct > 0.10 else "NORMAL",
+        })
     return results
 
 
-def build_result_payload(data, report_path):
-    ranked = sorted(data, key=lambda row: row.get("short_pct") or 0, reverse=True)[:10]
+def screen_tickers(tickers, provider=None):
+    """Short-interest rows for the given tickers, fetched via Yahoo only."""
+    return fetch_short_interest(tickers, provider=provider)
+
+
+def build_result_payload(data, report_path, top_n=10):
+    ranked = sorted(
+        [r for r in data if not r.get("blank")],
+        key=lambda row: row.get("short_pct") or 0, reverse=True,
+    )[:top_n]
+    blanks = [r for r in data if r.get("blank")]
     top = []
     for rank, row in enumerate(ranked, 1):
         top.append({
@@ -64,8 +116,18 @@ def build_result_payload(data, report_path):
                 f"{row.get('short_ratio') or 0} days to cover; {row.get('flag', 'UNKNOWN')}"
             ),
         })
+    for row in blanks:
+        if len(top) >= top_n:
+            break
+        top.append({
+            "rank": len(top) + 1,
+            "ticker": row["ticker"],
+            "name": row["ticker"],
+            "detail": f"blank — no Yahoo short-interest info for {row['ticker']}",
+        })
     return {
-        "summary": f"{len(top)} names ranked by short percentage of float",
+        "summary": (f"{len(ranked)} names with Yahoo short interest "
+                    f"({len(blanks)} blank)"),
         "report_path": str(report_path),
         "top": top,
     }
@@ -89,47 +151,52 @@ def write_result_json(path, payload):
             os.unlink(temporary_path)
 
 
-def write_note(today, data, result_json_path=None):
-    os.makedirs(KG_NOTES, exist_ok=True)
+def write_note(today, data, result_json_path=None, notes_dir=None):
+    notes_dir = notes_dir or NOTES_DIR
+    os.makedirs(notes_dir, exist_ok=True)
     lines = [
         "---",
         'type: "research-note"',
         f'date: "{today}"',
-        'topic: "Short interest scan — portfolio holdings"',
+        'topic: "Short interest scan — Yahoo short-interest fields"',
         'tags: ["short-interest", "sentiment"]',
         "---",
         "",
-        f"# Short Interest Scan — {today}",
+        f"# Short Interest Scan (Yahoo) — {today}",
         "",
         "| Ticker | Short % Float | Days to Cover | Shares Short | Flag |",
         "|--------|---------------|---------------|--------------|------|",
     ]
-    ranked = sorted(data, key=lambda x: x["short_pct"], reverse=True)
+    ranked = sorted([d for d in data if not d.get("blank")],
+                    key=lambda x: x.get("short_pct") or 0, reverse=True)
     for d in ranked:
-        shares = f'{d["shares_short"]:,}' if d["shares_short"] else "N/A"
-        lines.append(f"| {d['ticker']} | {d['short_pct']}% | {d['short_ratio']} | {shares} | {d['flag']} |")
-    flagged = [d["ticker"] for d in data if d["flag"] in ("HIGH", "ELEVATED")]
+        shares = f'{d["shares_short"]:,}' if d.get("shares_short") else "N/A"
+        lines.append(f"| {d['ticker']} | {d.get('short_pct', 0)}% | {d.get('short_ratio', 0)} | {shares} | {d.get('flag', 'n/a')} |")
+    for d in [d for d in data if d.get("blank")]:
+        lines.append(f"| {d['ticker']} | blank | | | |")
+    flagged = [d["ticker"] for d in ranked if d.get("flag") in ("HIGH", "ELEVATED")]
     if flagged:
-        lines.extend(["", f"**⚠️ Flagged:** {', '.join(flagged)}"])
-    path = os.path.join(KG_NOTES, f"{today} Short-Interest.md")
-    with open(path, "w") as f:
-        f.write("\n".join(lines))
+        lines.extend(["", f"**Flagged:** {', '.join(flagged)}"])
+    path = os.path.join(notes_dir, f"{today} Short-Interest.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
     print(f"Wrote {path}")
     if result_json_path:
-        write_result_json(result_json_path, build_result_payload(ranked, path))
+        write_result_json(result_json_path, build_result_payload(data, path))
     return path
 
 
-def main():
-    import argparse
+def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tickers", type=str, default=None)
+    ap.add_argument("--tickers", type=str, default=None,
+                    help="comma-separated symbols; default: built-in universe")
     ap.add_argument("--result-json", help="write the ranked rows for the CLI dashboard")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     today = date.today().isoformat()
-    tickers = args.tickers.split(",") if args.tickers else load_holdings()
+    tickers = ([t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+               if args.tickers else default_tickers())
     if not tickers:
-        print("No tickers found. Use --tickers or add pm_portfolio.json")
+        print("No tickers found. Use --tickers")
         return
     data = fetch_short_interest(tickers)
     write_note(today, data, args.result_json)

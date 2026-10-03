@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Fetch upcoming economic calendar events.
+"""RETIRED (archived): static approximate macro-event calendar.
+
+Retired because yfinance/Yahoo supplies no macro calendar and the static
+KNOWN_EVENTS schedule below is not data — dates must come from official
+sources (FRED API, central-bank calendars). Kept for reference only; it is
+no longer registered in screeners.json and no screen may depend on it.
+
+Original docstring follows.
+
+Fetch upcoming economic calendar events.
 
 Usage: python3 econ_calendar.py
 Writes: ~/Documents/Finance Knowledge Graph/Notes/<today> Econ-Calendar.md

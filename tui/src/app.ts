@@ -1,6 +1,6 @@
 import { BoxRenderable, TextRenderable, createCliRenderer } from "@opentui/core";
 import { describeResult } from "./events.js";
-import { blankRunState } from "./events.js";
+import { blankRunState, pushStderr } from "./events.js";
 import { loadLatestSavedRun } from "./history.js";
 import { groupByStage, orderedScreeners, SelectionModel } from "./registry.js";
 import { markRunStarted, shouldAutoRefresh, toggleRefresh, type RefreshSettings } from "./refresh.js";
@@ -73,6 +73,12 @@ export function detailText(selection: SelectionModel, run: DashboardRunState, sh
     const log = entry?.log ?? [];
     if (log.length === 0) lines.push("  (no output yet)");
     else for (const l of log.slice(-8)) lines.push(`  ${l.slice(0, 100)}`);
+    const stderr = entry?.stderr ?? [];
+    if (entry?.status === "failed" && stderr.length > 0) {
+      lines.push("");
+      lines.push("Diagnostics (stderr):");
+      for (const l of stderr.slice(-8)) lines.push(`  ${l.slice(0, 100)}`);
+    }
   }
   return lines.join("\n");
 }
@@ -200,13 +206,29 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
     }
     markRunStarted(refresh, Date.now());
     try {
+      // Stderr lines carry no screener id, so route each line to the
+      // currently-running entry of this run; once nothing is running
+      // (run finished), keep attributing to the last started screener.
+      let stderrTarget: string | null = null;
       const started = await startRunner({
         python: opts.python,
         root: opts.root,
         ids,
         active,
         state: run,
-        onEvent: () => paint(),
+        onEvent: (event) => {
+          if (event.type === "screener_started") stderrTarget = event.screener_id;
+          paint();
+        },
+        onStderr: (line) => {
+          const running = ids.find((id) => run.byScreener[id]?.status === "running");
+          const focused = selection.focused()?.id;
+          const lastStarted = stderrTarget && ids.includes(stderrTarget) ? stderrTarget : null;
+          const focusedInRun = focused && ids.includes(focused) ? focused : null;
+          const target = running ?? lastStarted ?? focusedInRun ?? ids[0];
+          if (target) pushStderr(run, target, line);
+          paint();
+        },
       });
       active = started.active;
       paint();

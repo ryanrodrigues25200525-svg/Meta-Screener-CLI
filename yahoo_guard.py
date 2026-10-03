@@ -24,3 +24,20 @@ def raise_if_yahoo_rate_limit(error: BaseException, context: str) -> None:
         raise RuntimeError(
             f"Yahoo rate limit detected during {context}; stop this screen and retry after cooldown."
         ) from error
+
+
+def __getattr__(name: str):
+    """Re-export the shared client for compatibility (lazy to avoid a cycle)."""
+    if name in (
+        "YahooClient",
+        "get_history",
+        "get_info",
+        "get_financials",
+        "get_earnings_dates",
+        "get_news",
+        "CACHE_TTL_SECONDS",
+    ):
+        import yahoo_client
+
+        return getattr(yahoo_client, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

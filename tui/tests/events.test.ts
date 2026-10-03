@@ -113,4 +113,13 @@ describe("JSON event handling", () => {
     const text = describeResult(state.byScreener["x"]);
     expect(text).toContain("missing result json");
   });
+
+  test("run-level output with empty/missing screener_id creates no entry", () => {
+    const s1 = blankRunState();
+    applyEvent(s1, { type: "output_line", run_id: "r", screener_id: "", line: "Stage cooldown" } as any);
+    expect(Object.keys(s1.byScreener)).toEqual([]);
+    const s2 = blankRunState();
+    applyEvent(s2, { type: "output_line", run_id: "r", line: "Stage cooldown" } as any);
+    expect(Object.keys(s2.byScreener)).toEqual([]);
+  });
 });

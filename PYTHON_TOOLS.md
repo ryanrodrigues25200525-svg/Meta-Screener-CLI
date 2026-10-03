@@ -1,8 +1,8 @@
 # Python tools catalog
 
-89 tracked Python files: 1 runner, 17 registered workflow scripts, 53
-supporting tools, 1 MCP server, 7 tests, and 10 archived one-off migrations.
-Descriptions below come from each module's own docstring. The 17 registered
+95 tracked Python files: 1 runner, 16 registered workflow scripts, 55
+supporting tools, 1 MCP server, 11 tests, and 11 archived one-off migrations.
+Descriptions below come from each module's own docstring. The 16 registered
 workflows are the only scripts the CLI runs; everything else is a supporting
 tool, test, or archived history.
 
@@ -12,25 +12,28 @@ tool, test, or archived history.
 
 ## Registered screeners (run via `metascreener`)
 
-17 workflows are registered in `screeners.json`; 16 are enabled by default and
-`screen-history` is optional (excluded from the default all-run).
+16 workflows are registered in `screeners.json`; 15 are enabled by default and
+`screen-history` is optional (excluded from the default all-run). All 16 are
+Yahoo-only (`"yahoo": true`); company and event screens accept an explicit
+`--tickers` list or fall back to the shared built-in universe in
+`demo_universe.py` as selection input only. `macro-calendar` is retired (see
+`archive/econ_calendar.py`).
 
 - [`meta_screen.py`](meta_screen.py) (`meta-overlap`) — deterministic 47-check cross-signal breadth screen over a curated universe; supports named check subsets and exports its top ranking.
-- [`rotation_screen.py`](rotation_screen.py) (`fundamental-rotation`) — ranks the book and rotation themes on revenue growth, margin trend, and valuation from stored fundamentals; exports the passing shortlist.
-- [`growth_momentum.py`](growth_momentum.py) (`revenue-growth-momentum`) — revenue growth and its direction per company from the stored fundamentals layer.
+- [`rotation_screen.py`](rotation_screen.py) (`fundamental-rotation`) — ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.
+- [`growth_momentum.py`](growth_momentum.py) (`revenue-growth-momentum`) — each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.
 - [`sector_rotation.py`](sector_rotation.py) (`sector-rotation`) — sector ETF performance over short and medium horizons.
-- [`breadth_rotation.py`](breadth_rotation.py) (`market-breadth`) — share of names above a 10-month moving average, positive 3-month returns, and median theme returns from stored monthly prices.
+- [`breadth_rotation.py`](breadth_rotation.py) (`market-breadth`) — share of names above a 10-month moving average, positive 3-month returns, and median theme returns from Yahoo daily closes.
 - [`volatility_regime.py`](volatility_regime.py) (`volatility-regime`) — VIX term structure and volatility-regime classification.
 - [`market_sentiment.py`](market_sentiment.py) (`market-sentiment`) — VIX, put/call, and Fear & Greed proxy.
 - [`commodities_fx.py`](commodities_fx.py) (`commodities-fx`) — commodity prices and FX rates.
 - [`cot_report.py`](cot_report.py) (`cot-futures-proxy`) — futures positioning via a yfinance proxy (not official CFTC data).
-- [`analyst_scan.py`](analyst_scan.py) (`analyst-consensus`) — sell-side consensus (recommendation, targets, analyst count) for graph-tracked tickers.
-- [`short_interest.py`](short_interest.py) (`short-interest`) — ranks portfolio tickers by short percentage of float; also accepts an explicit ticker list.
-- [`dividend_analysis.py`](dividend_analysis.py) (`dividend-analysis`) — ranks portfolio tickers by dividend yield and payout context.
-- [`unusual_options.py`](unusual_options.py) (`options-activity`) — options-chain activity for holdings or an explicit ticker list.
-- [`catalyst_scan.py`](catalyst_scan.py) (`catalyst-calendar`) — upcoming events already recorded in the graph's Important Dates folder.
-- [`econ_calendar.py`](econ_calendar.py) (`macro-calendar`) — approximate recurring macro-event calendar (confirm dates with official sources).
-- [`frontier_scan.py`](frontier_scan.py) (`research-frontier`) — open research questions and linked catalysts already recorded in the graph.
+- [`analyst_scan.py`](analyst_scan.py) (`analyst-consensus`) — sell-side consensus (recommendation, targets, analyst count) from Yahoo info for an explicit `--tickers` list or the built-in universe.
+- [`short_interest.py`](short_interest.py) (`short-interest`) — ranks tickers by Yahoo short percentage of float for an explicit `--tickers` list or the built-in universe.
+- [`dividend_analysis.py`](dividend_analysis.py) (`dividend-analysis`) — ranks tickers by Yahoo dividend yield and payout context for an explicit `--tickers` list or the built-in universe.
+- [`unusual_options.py`](unusual_options.py) (`options-activity`) — Yahoo options-chain activity for an explicit `--tickers` list or the built-in universe; provider coverage may be incomplete.
+- [`catalyst_scan.py`](catalyst_scan.py) (`catalyst-calendar`) — Yahoo earnings dates per ticker for an explicit `--tickers` list or the built-in universe; no local calendar fallback.
+- [`frontier_scan.py`](frontier_scan.py) (`research-frontier`) — latest Yahoo news stories per ticker in recency order for an explicit `--tickers` list or the built-in universe; not ranked by importance.
 - [`screen_tracker.py`](screen_tracker.py) (`screen-history`, optional) — outcome tracker (not a candidate screener): returns since prior meta-screen flags vs SPY.
 
 ## Market and risk analysis (stored price/fundamentals layer, offline)
@@ -108,6 +111,8 @@ tool, test, or archived history.
 
 ## Shared helpers
 
+- [`demo_universe.py`](demo_universe.py) — shared curated ticker universes used as selection input only by the Yahoo-backed screens; importing it touches no files and no network.
+- [`yahoo_client.py`](yahoo_client.py) — shared serial Yahoo scheduler/cache with fail-fast rate-limit stop; the only allowed Yahoo request path for screens.
 - [`yahoo_guard.py`](yahoo_guard.py) — shared fail-fast handling for Yahoo Finance rate-limit exceptions.
 
 ## MCP server
@@ -123,10 +128,14 @@ tool, test, or archived history.
 - [`tests/test_ranked_results.py`](tests/test_ranked_results.py) — JSON ranking adapters for rotation, short-interest, and dividend workflows.
 - [`tests/test_screener_mcp.py`](tests/test_screener_mcp.py) — MCP tool validation and registry operations with isolated registries.
 - [`tests/test_screener_mcp_stdio.py`](tests/test_screener_mcp_stdio.py) — end-to-end MCP stdio integration: launches the real server in a subprocess, drives it with the SDK client, and runs two non-Yahoo stub workflows under a temporary `FINANCE_AI_HOME`.
+- [`tests/test_yahoo_client.py`](tests/test_yahoo_client.py) — shared Yahoo client serialization, caching, and rate-limit stop with a fake provider.
+- [`tests/test_yahoo_events.py`](tests/test_yahoo_events.py) — Yahoo earnings/news events, `macro-calendar` retirement, and holdings-screen `--tickers` selection with fake providers.
+- [`tests/test_yahoo_fundamentals.py`](tests/test_yahoo_fundamentals.py) — Yahoo financials rotation/momentum payloads with blank output on missing data.
+- [`tests/test_yahoo_market.py`](tests/test_yahoo_market.py) — Yahoo-price breadth and meta-overlap universe selection with fake providers.
 
 ## Archive — one-off migrations (not runnable screens)
 
-Preserved byte-for-byte under [`archive/one-off-migrations/2026/`](archive/one-off-migrations/2026/) with their own readme:
+Preserved byte-for-byte under [`archive/one-off-migrations/2026/`](archive/one-off-migrations/2026/) with their own readme, plus the retired macro calendar at [`archive/econ_calendar.py`](archive/econ_calendar.py) (removed from the registry because Yahoo supplies no macro calendar; kept for reference only):
 
 - [`kg_repair.py`](archive/one-off-migrations/2026/kg_repair.py) — first deterministic Finance Knowledge Graph cleanup and frontmatter repairs.
 - [`kg_repair2.py`](archive/one-off-migrations/2026/kg_repair2.py) — canonicalizes theme-company tokens to company-node titles and applies residual fixes.

@@ -8,20 +8,20 @@ const ROOT = resolve(dirname(fileURLToPath(new URL(import.meta.url))), "../..");
 const registry = parseRegistry(readFileSync(resolve(ROOT, "screeners.json"), "utf-8"));
 
 describe("workflow selection", () => {
-  test("registry exposes 17 workflows", () => {
-    expect(registry.screeners).toHaveLength(17);
+  test("registry exposes 16 workflows", () => {
+    expect(registry.screeners).toHaveLength(16);
   });
 
   test("screen-history is the only default-disabled workflow", () => {
     const disabled = registry.screeners.filter((s) => s.default_enabled === false).map((s) => s.id);
     expect(disabled).toEqual(["screen-history"]);
-    expect(defaultEnabledIds(registry)).toHaveLength(16);
+    expect(defaultEnabledIds(registry)).toHaveLength(15);
   });
 
   test("groups preserve the five registry stages", () => {
     const groups = groupByStage(registry);
     expect(groups.map((g) => g.id)).toEqual(["discovery", "market-context", "company-signals", "events", "tracking"]);
-    expect(groups.reduce((n, g) => n + g.screeners.length, 0)).toBe(17);
+    expect(groups.reduce((n, g) => n + g.screeners.length, 0)).toBe(16);
   });
 
   test("selection preselects only the first default and wraps navigation", () => {
@@ -47,9 +47,9 @@ describe("workflow selection", () => {
     model.toggle("meta-overlap");
     expect(model.selectedIds()).toEqual(["meta-overlap", "sector-rotation"]);
     model.selectAll();
-    expect(model.count()).toBe(17);
-    model.selectDefaults();
     expect(model.count()).toBe(16);
+    model.selectDefaults();
+    expect(model.count()).toBe(15);
   });
 
   test("unknown ids are ignored", () => {

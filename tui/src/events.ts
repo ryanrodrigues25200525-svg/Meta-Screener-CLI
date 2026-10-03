@@ -7,6 +7,8 @@ import type {
 } from "./types.js";
 
 const MAX_LOG_LINES = 200;
+const MAX_STDERR_LINES = 50;
+const MAX_STDERR_CHARS = 200;
 
 export function parseEventLine(raw: string, fallbackRunId = "unknown"): RunEvent | null {
   const line = raw.trim();
@@ -40,6 +42,21 @@ function pushLog(entry: ScreenerRunState, line: string): void {
   entry.log.push(line);
   if (entry.log.length > MAX_LOG_LINES) {
     entry.log.splice(0, entry.log.length - MAX_LOG_LINES);
+  }
+}
+
+/**
+ * Store one plain-text stderr line on a screener entry. Stderr is kept out
+ * of stdout JSONL parsing (see runner.ts) and stored separately so failed
+ * runs can show diagnostics without polluting the output log.
+ */
+export function pushStderr(state: DashboardRunState, screenerId: string, line: string): void {
+  const entry = ensureEntry(state, screenerId);
+  const truncated = line.length > MAX_STDERR_CHARS ? line.slice(0, MAX_STDERR_CHARS) : line;
+  if (!entry.stderr) entry.stderr = [];
+  entry.stderr.push(truncated);
+  if (entry.stderr.length > MAX_STDERR_LINES) {
+    entry.stderr.splice(0, entry.stderr.length - MAX_STDERR_LINES);
   }
 }
 

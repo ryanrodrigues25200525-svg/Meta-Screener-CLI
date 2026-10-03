@@ -104,6 +104,12 @@ export function renderDashboardText(model: DashboardModel, opts: RenderOptions):
       lines.push("-- output --");
       for (const logLine of log.slice(-5)) lines.push(truncate(logLine, w));
     }
+    const failedEntry = model.run.byScreener[focused.id];
+    const stderr = failedEntry?.stderr ?? [];
+    if (failedEntry?.status === "failed" && stderr.length > 0) {
+      lines.push("-- diagnostics (stderr) --");
+      for (const errLine of stderr.slice(-8)) lines.push(truncate(errLine, w));
+    }
   }
   lines.push(footerLine(w, false));
   return lines.join("\n");

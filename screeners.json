@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "stages": [
     {
       "id": "discovery",
@@ -19,7 +19,7 @@
     {
       "id": "events",
       "name": "Catalysts and open research",
-      "description": "Upcoming catalyst and open-question scans from the Finance Knowledge Graph."
+      "description": "Upcoming Yahoo earnings catalysts and latest Yahoo news per ticker."
     },
     {
       "id": "tracking",
@@ -42,8 +42,7 @@
         "numpy"
       ],
       "reads": [
-        "Built-in demo universe; optional --universe CSV",
-        "Local Finance Knowledge Graph company/theme notes"
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
       ],
       "writes": [
         "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
@@ -57,13 +56,16 @@
       "name": "Fundamental Rotation Screen",
       "file": "rotation_screen.py",
       "stage": "discovery",
-      "description": "Ranks stored company fundamentals by revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
-      "provider": "Local Finance Knowledge Graph history",
-      "yahoo": false,
-      "requirements": [],
+      "description": "Ranks curated companies by Yahoo revenue growth, margin trend, and valuation; leaves unsupported currency ratios blank.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
       "reads": [
-        "Datasets/History/fundamentals_annual",
-        "Datasets/History/fundamentals_quarterly"
+        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
       ],
       "writes": [
         "rotation_screen.csv"
@@ -76,15 +78,20 @@
       "name": "Revenue Growth Momentum",
       "file": "growth_momentum.py",
       "stage": "discovery",
-      "description": "Compares each company's own annual and quarterly revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
-      "provider": "Local Finance Knowledge Graph history",
-      "yahoo": false,
-      "requirements": [],
-      "reads": [
-        "Datasets/History/fundamentals_annual",
-        "Datasets/History/fundamentals_quarterly"
+      "description": "Compares each company's own annual and quarterly Yahoo revenue-growth direction; cross-company comparisons are directional because fiscal calendars differ.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
       ],
-      "writes": [],
+      "reads": [
+        "Yahoo Finance statements per ticker; built-in symbol list as selection input only"
+      ],
+      "writes": [
+        "growth_momentum.csv"
+      ],
       "default_enabled": true,
       "args": []
     },
@@ -114,13 +121,16 @@
       "name": "Market Breadth and Theme Rotation",
       "file": "breadth_rotation.py",
       "stage": "market-context",
-      "description": "Measures shares above a 10-month moving average, positive 3-month returns, and median theme returns from stored monthly prices.",
-      "provider": "Local Finance Knowledge Graph history",
-      "yahoo": false,
-      "requirements": [],
+      "description": "Measures shares above a long moving average, positive 3-month returns, and median group returns from Yahoo daily closes.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
       "reads": [
-        "Datasets/History/prices_monthly",
-        "Themes/*.md"
+        "Yahoo Finance daily closes per ticker via yahoo_client; built-in symbol list as selection input only"
       ],
       "writes": [],
       "default_enabled": true,
@@ -216,17 +226,17 @@
       "name": "Analyst Consensus Snapshot",
       "file": "analyst_scan.py",
       "stage": "company-signals",
-      "description": "Collects recommendation, price-target range, and analyst-count fields for graph-tracked companies.",
+      "description": "Collects recommendation, price-target range, and analyst-count fields from Yahoo info for an explicit ticker list or the shared built-in universe.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
       "requirements": [
         "yfinance"
       ],
       "reads": [
-        "Finance Knowledge Graph company tickers"
+        "Yahoo Finance info per ticker via yahoo_client; explicit --tickers or built-in symbol list as selection input only"
       ],
       "writes": [
-        "Finance Knowledge Graph/Notes/<date> Analyst Consensus.md"
+        "reports/<date> Analyst Consensus.md (local run-record note; SCREEN_NOTES_DIR overrides)"
       ],
       "default_enabled": true,
       "batchable": true,
@@ -237,17 +247,17 @@
       "name": "Portfolio Short-Interest Screen",
       "file": "short_interest.py",
       "stage": "company-signals",
-      "description": "Fetches short-interest fields for portfolio holdings or an explicit ticker list.",
+      "description": "Fetches Yahoo short-interest fields for an explicit ticker list or the shared built-in universe.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
       "requirements": [
         "yfinance"
       ],
       "reads": [
-        "pm_portfolio.json unless --tickers is supplied"
+        "Yahoo Finance info per ticker via yahoo_client; explicit --tickers or built-in symbol list as selection input only"
       ],
       "writes": [
-        "Finance Knowledge Graph/Notes/<date> Short-Interest.md"
+        "reports/<date> Short-Interest.md (local run-record note; SCREEN_NOTES_DIR overrides)"
       ],
       "default_enabled": true,
       "args": []
@@ -257,17 +267,17 @@
       "name": "Portfolio Dividend Screen",
       "file": "dividend_analysis.py",
       "stage": "company-signals",
-      "description": "Summarizes dividend yield and payout context for portfolio holdings.",
+      "description": "Summarizes Yahoo dividend yield and payout fields for an explicit ticker list or the shared built-in universe.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
       "requirements": [
         "yfinance"
       ],
       "reads": [
-        "pm_portfolio.json"
+        "Yahoo Finance info per ticker via yahoo_client; explicit --tickers or built-in symbol list as selection input only"
       ],
       "writes": [
-        "Finance Knowledge Graph/Notes/<date> Dividend-Analysis.md"
+        "reports/<date> Dividend-Analysis.md (local run-record note; SCREEN_NOTES_DIR overrides)"
       ],
       "default_enabled": true,
       "args": []
@@ -277,17 +287,17 @@
       "name": "Portfolio Options-Activity Screen",
       "file": "unusual_options.py",
       "stage": "company-signals",
-      "description": "Checks available options-chain activity for portfolio holdings or an explicit ticker list; provider coverage may be incomplete.",
+      "description": "Checks Yahoo options-chain activity for an explicit ticker list or the shared built-in universe; provider coverage may be incomplete.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
       "requirements": [
         "yfinance"
       ],
       "reads": [
-        "pm_portfolio.json unless --tickers is supplied"
+        "Yahoo Finance options/option_chain per ticker via yahoo_client; explicit --tickers or built-in symbol list as selection input only"
       ],
       "writes": [
-        "Finance Knowledge Graph/Notes/<date> Unusual-Options.md"
+        "reports/<date> Unusual-Options.md (local run-record note; SCREEN_NOTES_DIR overrides)"
       ],
       "default_enabled": true,
       "args": []
@@ -297,33 +307,18 @@
       "name": "Company Catalyst Calendar",
       "file": "catalyst_scan.py",
       "stage": "events",
-      "description": "Collects upcoming events already recorded in the Finance Knowledge Graph.",
-      "provider": "Local Finance Knowledge Graph",
-      "yahoo": false,
-      "requirements": [],
+      "description": "Lists only Yahoo earnings dates per ticker for an explicit ticker list or the shared built-in universe; no local calendar fallback.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas"
+      ],
       "reads": [
-        "Important Dates/*.md"
+        "Yahoo Finance earnings dates per ticker via yahoo_client; explicit --tickers or built-in symbol list as selection input only"
       ],
       "writes": [
-        "Finance Knowledge Graph/Notes/<date> Catalysts.md"
-      ],
-      "default_enabled": true,
-      "args": []
-    },
-    {
-      "id": "macro-calendar",
-      "name": "Macro Calendar",
-      "file": "econ_calendar.py",
-      "stage": "events",
-      "description": "Builds an approximate recurring macro-event calendar; dates should be confirmed with official sources.",
-      "provider": "Local recurring-calendar rules",
-      "yahoo": false,
-      "requirements": [],
-      "reads": [
-        "Built-in approximate recurring macro schedule"
-      ],
-      "writes": [
-        "Finance Knowledge Graph/Notes/<date> Econ-Calendar.md"
+        "reports/<date> Catalysts.md (local run-record note; SCREEN_NOTES_DIR overrides)"
       ],
       "default_enabled": true,
       "args": []
@@ -333,15 +328,17 @@
       "name": "Open Research Questions",
       "file": "frontier_scan.py",
       "stage": "events",
-      "description": "Surfaces unresolved research questions and linked catalysts already recorded in the Finance Knowledge Graph.",
-      "provider": "Local Finance Knowledge Graph",
-      "yahoo": false,
-      "requirements": [],
+      "description": "Lists latest Yahoo news stories per ticker in recency order; not ranked by importance.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance"
+      ],
       "reads": [
-        "Finance Knowledge Graph research notes"
+        "Yahoo Finance news per ticker via yahoo_client; explicit --tickers or built-in symbol list as selection input only"
       ],
       "writes": [
-        "Finance Knowledge Graph/Notes/<date> Frontier.md"
+        "reports/<date> Frontier.md (local run-record note; SCREEN_NOTES_DIR overrides)"
       ],
       "default_enabled": true,
       "args": []
@@ -351,7 +348,7 @@
       "name": "Meta-Screen Outcome Tracker",
       "file": "screen_tracker.py",
       "stage": "tracking",
-      "description": "Tracks returns after prior meta-screen flags; this is an outcome tracker, not a candidate screener.",
+      "description": "Tracks returns after prior meta-screen flags using Yahoo price histories; this is an outcome tracker, not a candidate screener.",
       "provider": "Yahoo Finance via yfinance",
       "yahoo": true,
       "requirements": [
@@ -359,7 +356,7 @@
         "officecli for workbook output"
       ],
       "reads": [
-        "Prior Meta-Screen notes"
+        "Prior Meta-Screen run notes (screen outputs); Yahoo Finance price histories via yahoo_client"
       ],
       "writes": [
         "Trackers.xlsx unless --dry is supplied"

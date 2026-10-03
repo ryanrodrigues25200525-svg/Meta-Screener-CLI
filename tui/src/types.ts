@@ -96,6 +96,8 @@ export interface ScreenerRunState {
   top?: TopRow[];
   resultError?: string;
   log: string[];
+  /** Plain-text stderr diagnostics; never parsed as run events. Bounded by pushStderr. */
+  stderr?: string[];
 }
 
 export interface DashboardRunState {

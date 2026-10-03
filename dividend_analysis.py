@@ -1,39 +1,84 @@
 #!/usr/bin/env python3
-"""Analyze dividend yields for portfolio holdings.
+"""Analyze dividend yields from Yahoo Finance.
 
-Usage: python3 dividend_analysis.py
-Reads: ~/finance-ai/pm_portfolio.json
-Writes: ~/Documents/Finance Knowledge Graph/Notes/<today> Dividend-Analysis.md
+Yahoo-backed: yield, rate, and payout fields come from Yahoo Finance
+``info`` via ``yahoo_client`` (the only allowed Yahoo path — never call
+``yf.Ticker`` directly). The ticker list is an explicit ``--tickers``
+selection or the shared built-in universe; nothing is read from local
+portfolio files.
+
+Usage:
+    python3 dividend_analysis.py [--tickers VZ,JNJ] [--income-portfolio]
+        [--result-json out/dividend.json]
 """
-import os, sys, json, tempfile
+
+import argparse
+import json
+import os
+import tempfile
 from datetime import date
-from yahoo_guard import raise_if_yahoo_rate_limit
 
-try:
-    import yfinance as yf
-except Exception as e:
-    print(f"FATAL: need yfinance: {e}")
-    sys.exit(1)
-
-KG_NOTES = os.path.expanduser("~/Documents/Finance Knowledge Graph/Notes")
-PM_FILE = os.path.expanduser("~/finance-ai/pm_portfolio.json")
+from demo_universe import HOLDINGS_TICKERS
 
 
-def load_holdings():
+def _default_notes_dir():
+    override = os.environ.get("SCREEN_NOTES_DIR")
+    if override:
+        return override
+    legacy = os.environ.get("FINANCE_KG_ROOT")
+    if legacy:
+        return os.path.join(legacy, "Notes")
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+
+
+NOTES_DIR = _default_notes_dir()
+
+
+def default_tickers():
+    """Shared built-in universe (selection input only)."""
+    return list(HOLDINGS_TICKERS)
+
+
+def _client_for(provider):
+    """Return a YahooClient-compatible object (injected stub or live client)."""
+    if provider is None:
+        import yahoo_client
+        return yahoo_client
+    if hasattr(provider, "get_info"):
+        return provider
+    if callable(provider):
+        from yahoo_client import YahooClient
+        return YahooClient(provider=provider)
+    raise TypeError("provider must be a YahooClient, a stub with "
+                    "get_info, or a provider callable")
+
+
+def _safe_info(client, ticker):
+    """Yahoo info for one ticker; None when unavailable.
+
+    Rate-limit RuntimeErrors propagate (fail fast); per-ticker gaps are blank.
+    """
     try:
-        with open(PM_FILE, encoding="utf-8") as f:
-            data = json.load(f)
-        return [h.get("symbol") or h.get("ticker") for h in data.get("positions", []) if h.get("symbol") or h.get("ticker")]
+        return client.get_info(ticker)
+    except RuntimeError:
+        raise
     except Exception:
-        return []
+        return None
 
 
-def analyze(tickers):
+def analyze(tickers, provider=None):
+    """Yahoo dividend rows for each ticker. One row per ticker."""
+    client = _client_for(provider)
     results = []
-    for ticker in tickers:
+    for tk in tickers:
+        ticker = tk.strip().upper()
+        if not ticker:
+            continue
+        info = _safe_info(client, ticker)
+        if not info:
+            results.append({"ticker": ticker, "blank": True})
+            continue
         try:
-            t = yf.Ticker(ticker)
-            info = t.info
             div_yield = info.get("dividendYield", 0) or 0
             div_rate = info.get("dividendRate", 0) or 0
             if div_yield and div_yield > 1:  # yfinance already in percent for many tickers
@@ -45,21 +90,27 @@ def analyze(tickers):
                 if _ry and abs(_ry - div_yield) > 0.05:  # >5pp disagreement -> trust rate/price
                     div_yield = _ry
             payout = info.get("payoutRatio", 0) or 0
-            ex_date = info.get("exDividendDate")
-            results.append({
-                "ticker": ticker,
-                "yield": round(div_yield * 100, 2),
-                "rate": round(div_rate, 2),
-                "payout": round(payout * 100, 1) if payout else None,
-            })
-        except Exception as exc:
-            raise_if_yahoo_rate_limit(exc, f"dividend fetch for {ticker}")
-            pass
+        except AttributeError:
+            results.append({"ticker": ticker, "blank": True})
+            continue
+        results.append({
+            "ticker": ticker,
+            "yield": round(div_yield * 100, 2),
+            "rate": round(div_rate, 2),
+            "payout": round(payout * 100, 1) if payout else None,
+        })
     return results
 
 
+def screen_tickers(tickers, provider=None):
+    """Dividend rows for the given tickers, fetched via Yahoo only."""
+    return analyze(tickers, provider=provider)
+
+
 def build_result_payload(data, report_path):
-    ranked = sorted(data, key=lambda row: row.get("yield") or 0, reverse=True)[:10]
+    measured = [r for r in data if not r.get("blank")]
+    blanks = [r for r in data if r.get("blank")]
+    ranked = sorted(measured, key=lambda row: row.get("yield") or 0, reverse=True)
     top = []
     for rank, row in enumerate(ranked, 1):
         payout = "n/a" if row.get("payout") is None else f"{row['payout']}%"
@@ -69,8 +120,16 @@ def build_result_payload(data, report_path):
             "name": row["ticker"],
             "detail": f"Yield {row.get('yield') or 0}%; annual rate ${row.get('rate') or 0}; payout {payout}",
         })
+    for row in blanks:
+        top.append({
+            "rank": len(top) + 1,
+            "ticker": row["ticker"],
+            "name": row["ticker"],
+            "detail": f"blank — no Yahoo dividend info for {row['ticker']}",
+        })
     return {
-        "summary": f"{len(top)} names ranked by dividend yield",
+        "summary": (f"{len(ranked)} names with Yahoo dividend info "
+                    f"({len(blanks)} blank)"),
         "report_path": str(report_path),
         "top": top,
     }
@@ -94,50 +153,52 @@ def write_result_json(path, payload):
             os.unlink(temporary_path)
 
 
-def write_note(today, data, result_json_path=None):
-    os.makedirs(KG_NOTES, exist_ok=True)
+def write_note(today, data, result_json_path=None, notes_dir=None):
+    notes_dir = notes_dir or NOTES_DIR
+    os.makedirs(notes_dir, exist_ok=True)
     lines = [
         "---",
         'type: "research-note"',
         f'date: "{today}"',
-        'topic: "Dividend analysis — portfolio holdings"',
+        'topic: "Dividend analysis — Yahoo yield and payout fields"',
         'tags: ["dividend", "income"]',
         "---",
         "",
-        f"# Dividend Analysis — {today}",
+        f"# Dividend Analysis (Yahoo) — {today}",
         "",
         "| Ticker | Yield % | Annual $/share | Payout % |",
         "|--------|---------|----------------|----------|",
     ]
-    ranked = sorted(data, key=lambda x: x["yield"], reverse=True)
+    ranked = sorted([d for d in data if not d.get("blank")],
+                    key=lambda x: x.get("yield") or 0, reverse=True)
     for d in ranked:
-        payout = f'{d["payout"]}%' if d["payout"] else "N/A"
-        lines.append(f"| {d['ticker']} | {d['yield']}% | ${d['rate']} | {payout} |")
-    path = os.path.join(KG_NOTES, f"{today} Dividend-Analysis.md")
+        payout = f'{d["payout"]}%' if d.get("payout") else "N/A"
+        lines.append(f"| {d['ticker']} | {d.get('yield', 0)}% | ${d.get('rate', 0)} | {payout} |")
+    for d in [d for d in data if d.get("blank")]:
+        lines.append(f"| {d['ticker']} | blank | | |")
+    path = os.path.join(notes_dir, f"{today} Dividend-Analysis.md")
     with open(path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
+        f.write("\n".join(lines) + "\n")
     print(f"Wrote {path}")
     if result_json_path:
-        write_result_json(result_json_path, build_result_payload(ranked, path))
+        write_result_json(result_json_path, build_result_payload(data, path))
     return path
 
 
-def main():
-    import argparse as _ap
-    _p = _ap.ArgumentParser()
-    _p.add_argument("--income-portfolio", action="store_true", help="limit to dividend-paying portfolio names")
-    _p.add_argument("--result-json", help="write the ranked rows for the CLI dashboard")
-    _a, _ = _p.parse_known_args()
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tickers", type=str, default=None,
+                    help="comma-separated symbols; default: built-in universe")
+    ap.add_argument("--income-portfolio", action="store_true", help="limit to dividend-paying names")
+    ap.add_argument("--result-json", help="write the ranked rows for the CLI dashboard")
+    args = ap.parse_args(argv)
     today = date.today().isoformat()
-    tickers = load_holdings()
-    income_only = _a.income_portfolio
-    if not tickers:
-        tickers = ["VZ", "JNJ", "KO", "PG", "MMM", "T", "XOM", "CVX"]
-        print("No pm_portfolio.json found, using default dividend stocks")
+    tickers = ([t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+               if args.tickers else default_tickers())
     data = analyze(tickers)
-    if income_only:
-        data = [r for r in data if r["yield"] > 0]
-    write_note(today, data, _a.result_json)
+    if args.income_portfolio:
+        data = [r for r in data if (r.get("yield") or 0) > 0]
+    write_note(today, data, args.result_json)
     print(f"Analyzed {len(data)} tickers")
 
 
