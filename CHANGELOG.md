@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-03
+
+### Added
+
+- Split `meta-overlap` into 8 family screeners (`meta-momentum`,
+  `meta-technical`, `meta-valuation`, `meta-fundamental`, `meta-theme`,
+  `meta-insider`, `meta-earnings`, `meta-quality`) covering all 47 checks via
+  `--check` filters; `meta-overlap` still runs the full set. Registry grows
+  from 16 to 24 entries (23 enabled by default; `screen-history` optional).
+
 ## [0.4.0] - 2026-10-03
 
 Closes follow-up issues #2 (Yahoo-only screeners), #3 (TUI stderr

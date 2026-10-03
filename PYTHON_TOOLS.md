@@ -12,8 +12,8 @@ tool, test, or archived history.
 
 ## Registered screeners (run via `metascreener`)
 
-16 workflows are registered in `screeners.json`; 15 are enabled by default and
-`screen-history` is optional (excluded from the default all-run). All 16 are
+24 workflows are registered in `screeners.json` (16 scripts; the 8 `meta-*` families share `meta_screen.py` via `--check` filters); 23 are enabled by default and
+`screen-history` is optional (excluded from the default all-run). All 24 are
 Yahoo-only (`"yahoo": true`); company and event screens accept an explicit
 `--tickers` list or fall back to the shared built-in universe in
 `demo_universe.py` as selection input only. `macro-calendar` is retired (see

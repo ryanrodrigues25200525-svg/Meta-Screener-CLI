@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "stages": [
     {
       "id": "discovery",
@@ -50,6 +50,292 @@
       ],
       "default_enabled": true,
       "args": []
+    },
+    {
+      "id": "meta-momentum",
+      "name": "Meta Screen: Momentum",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 4 momentum checks across the curated universe; ranks family breadth separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "6m momentum leader (vs SPY)",
+        "--check",
+        "12m outperformer (vs SPY)",
+        "--check",
+        "short-term re-acceleration",
+        "--check",
+        "dip within uptrend"
+      ]
+    },
+    {
+      "id": "meta-technical",
+      "name": "Meta Screen: Technicals",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 4 technical-structure checks across the curated universe; ranks family breadth separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "uptrend structure (20>50>200 SMA)",
+        "--check",
+        "RSI between 30 and 50",
+        "--check",
+        "proximity to 52w high",
+        "--check",
+        "recovered from 52w low"
+      ]
+    },
+    {
+      "id": "meta-valuation",
+      "name": "Meta Screen: Valuation",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 5 valuation checks across the curated universe; ranks family breadth separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "cheap fwd P/E (<15)",
+        "--check",
+        "low P/B (<2)",
+        "--check",
+        "low P/S (<2)",
+        "--check",
+        "GARP (P/E <25; growth >10%; PEG <2.5)",
+        "--check",
+        "sector relative value (≥20% below peers)"
+      ]
+    },
+    {
+      "id": "meta-fundamental",
+      "name": "Meta Screen: Fundamentals",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 3 fundamental-growth checks across the curated universe; ranks family breadth separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "high revenue growth (>20%)",
+        "--check",
+        "high ROE (>15%)",
+        "--check",
+        "net margin >8%"
+      ]
+    },
+    {
+      "id": "meta-theme",
+      "name": "Meta Screen: Theme Rotation",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 23 theme-rotation checks across the curated universe; ranks family breadth separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "theme: semis/AI rotation in",
+        "--check",
+        "theme: defense rotation in",
+        "--check",
+        "theme: oil & gas rotation in",
+        "--check",
+        "theme: dividend/income rotation in",
+        "--check",
+        "theme: Japan rotation in",
+        "--check",
+        "theme: small-cap value rotation in",
+        "--check",
+        "theme: healthcare/biotech rotation in",
+        "--check",
+        "theme: gold & miners rotation in",
+        "--check",
+        "theme: nuclear/power rotation in",
+        "--check",
+        "theme: cybersecurity rotation in",
+        "--check",
+        "theme: space & defense-tech rotation in",
+        "--check",
+        "theme: copper/electrification rotation in",
+        "--check",
+        "theme: memory/AI hardware rotation in",
+        "--check",
+        "theme: AI grid & cooling rotation in",
+        "--check",
+        "theme: biotech rotation in",
+        "--check",
+        "theme: banks rotation in",
+        "--check",
+        "theme: robotics & automation rotation in",
+        "--check",
+        "theme: south korea rotation in",
+        "--check",
+        "theme: taiwan rotation in",
+        "--check",
+        "theme: china rotation in",
+        "--check",
+        "theme: india rotation in",
+        "--check",
+        "theme: europe rotation in",
+        "--check",
+        "theme: brazil/em rotation in"
+      ]
+    },
+    {
+      "id": "meta-insider",
+      "name": "Meta Screen: Insider",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the insider cluster-buy check across the curated universe.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "insider cluster buy (≥2 insiders, 45d)"
+      ]
+    },
+    {
+      "id": "meta-earnings",
+      "name": "Meta Screen: Earnings Drift",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the earnings-beat-drift check across the curated universe.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "earnings beat drift (PEAD)"
+      ]
+    },
+    {
+      "id": "meta-quality",
+      "name": "Meta Screen: Quality",
+      "file": "meta_screen.py",
+      "stage": "discovery",
+      "description": "Runs the 6 business-quality checks across the curated universe; ranks family breadth separately.",
+      "provider": "Yahoo Finance via yfinance",
+      "yahoo": true,
+      "requirements": [
+        "yfinance",
+        "pandas",
+        "numpy"
+      ],
+      "reads": [
+        "Yahoo Finance history/info/earnings/financials per ticker via yahoo_client; built-in demo universe or optional --universe CSV as selection input only"
+      ],
+      "writes": [
+        "Finance Knowledge Graph/Notes/<date> Meta-Screen.md",
+        "rotation_history.csv"
+      ],
+      "default_enabled": true,
+      "args": [
+        "--check",
+        "Piotroski F-score ≥7/9 + cheap",
+        "--check",
+        "gross profitability high (GP/assets >33%)",
+        "--check",
+        "cash-backed earnings (accruals <5% assets)",
+        "--check",
+        "buyback acceleration (≥2× YoY, ≥2% mcap)",
+        "--check",
+        "capital discipline (capex ≤+5% YoY, FCF+)",
+        "--check",
+        "growth efficiency (revenue up; op/FCF margin +1pp)"
+      ]
     },
     {
       "id": "fundamental-rotation",
