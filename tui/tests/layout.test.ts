@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { detailText, navText, statusText } from "../src/app.js";
+import { applyEvent, blankRunState, describeLeaderboard } from "../src/events.js";
 import { renderDashboardText } from "../src/layout.js";
-import { blankRunState } from "../src/events.js";
 import { shouldAutoRefresh } from "../src/refresh.js";
 import { groupByStage, loadRegistryFile, orderedScreeners, SelectionModel } from "../src/registry.js";
 import { buildRunnerCommand, layoutForWidth, resolveRuntime } from "../src/runtime.js";
@@ -35,6 +35,32 @@ describe("narrow-terminal state/layout", () => {
     for (const line of narrow.split("\n")) {
       expect(line.length).toBeLessThanOrEqual(60);
     }
+  });
+
+  test("leaderboard event populates the board panel", () => {
+    const run = blankRunState();
+    applyEvent(run, {
+      type: "leaderboard",
+      run_id: "r1",
+      top: [
+        { ticker: "NVDA", appearances: 5, best_rank: 1 },
+        { ticker: "XOM", appearances: 3, best_rank: 2 },
+        { ticker: 42, appearances: "x", best_rank: 1 },
+      ],
+    } as never);
+    expect(run.leaderboard.map((r) => r.ticker)).toEqual(["NVDA", "XOM"]);
+    const text = describeLeaderboard(run);
+    expect(text).toContain("NVDA");
+    expect(text).toContain("5x");
+    const groups = groupByStage(registry);
+    const flat = orderedScreeners(registry);
+    const model = {
+      groups, flat, focusedIndex: 0, selected: new Set<string>(),
+      run, showDetails: false, refreshEnabled: false, overall: "ok",
+    };
+    const normal = renderDashboardText(model, { width: 110, height: 32 });
+    expect(normal).toContain("-- leaderboard --");
+    expect(normal).toContain("NVDA");
   });
 
   test("nav/detail/status text helpers expose selection and results", () => {

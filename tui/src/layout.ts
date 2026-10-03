@@ -1,4 +1,4 @@
-import { describeResult } from "./events.js";
+import { describeLeaderboard, describeResult } from "./events.js";
 import type { GroupedStage } from "./registry.js";
 import { layoutForWidth } from "./runtime.js";
 import type { DashboardRunState, ScreenerMeta } from "./types.js";
@@ -75,6 +75,10 @@ export function renderDashboardText(model: DashboardModel, opts: RenderOptions):
         lines.push(truncate("  " + first, w));
       }
     }
+    lines.push("-- leaderboard --");
+    for (const boardLine of describeLeaderboard(model.run).split("\n").slice(0, 11)) {
+      lines.push(truncate(boardLine, w));
+    }
     lines.push(footerLine(w, true));
     return lines.join("\n");
   }
@@ -110,6 +114,11 @@ export function renderDashboardText(model: DashboardModel, opts: RenderOptions):
       lines.push("-- diagnostics (stderr) --");
       for (const errLine of stderr.slice(-8)) lines.push(truncate(errLine, w));
     }
+  }
+  lines.push("");
+  lines.push("-- leaderboard --");
+  for (const boardLine of describeLeaderboard(model.run).split("\n").slice(0, 11)) {
+    lines.push(truncate(boardLine, w));
   }
   lines.push(footerLine(w, false));
   return lines.join("\n");

@@ -1,5 +1,5 @@
 import { BoxRenderable, TextRenderable, createCliRenderer } from "@opentui/core";
-import { describeResult } from "./events.js";
+import { describeLeaderboard, describeResult } from "./events.js";
 import { blankRunState, pushStderr } from "./events.js";
 import { loadLatestSavedRun } from "./history.js";
 import { groupByStage, orderedScreeners, SelectionModel } from "./registry.js";
@@ -168,11 +168,23 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
   detailBox.add(detail);
   body.add(navBox);
   body.add(detailBox);
+  const boardBox = new BoxRenderable(renderer, {
+    id: "leaderboard",
+    border: true,
+    borderColor: DARK.border,
+    backgroundColor: DARK.panel,
+    paddingLeft: 1,
+    paddingRight: 1,
+    flexShrink: 0,
+  });
+  const board = new TextRenderable(renderer, { id: "leaderboard-text", content: "", fg: DARK.text });
+  boardBox.add(board);
   const footer = new TextRenderable(renderer, { id: "footer", content: FOOTER, fg: DARK.dim });
 
   root.add(header);
   root.add(status);
   root.add(body);
+  root.add(boardBox);
   root.add(footer);
   renderer.root.add(root);
 
@@ -192,6 +204,8 @@ export async function runDashboard(opts: AppOptions): Promise<void> {
       nav.content = navText(selection, run, groups);
     }
     detail.content = detailText(selection, run, showDetails);
+    const boardLines = describeLeaderboard(run).split("\n").slice(0, 11);
+    board.content = ["Leaderboard — most consistent across screeners", ...boardLines].join("\n");
     footer.content = narrow ? "↑↓ move · space sel · r run · d info · q quit" : FOOTER;
   }
 

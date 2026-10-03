@@ -1,5 +1,6 @@
 import type {
   DashboardRunState,
+  LeaderboardEntry,
   RunEvent,
   ScreenerFinishedEvent,
   ScreenerRunState,
@@ -7,6 +8,7 @@ import type {
 } from "./types.js";
 
 const MAX_LOG_LINES = 200;
+const MAX_BOARD_ROWS = 10;
 const MAX_STDERR_LINES = 50;
 const MAX_STDERR_CHARS = 200;
 
@@ -26,7 +28,7 @@ export function parseEventLine(raw: string, fallbackRunId = "unknown"): RunEvent
 }
 
 export function blankRunState(): DashboardRunState {
-  return { runId: null, running: false, overall: "idle", byScreener: {}, lastFinishedAt: null };
+  return { runId: null, running: false, overall: "idle", byScreener: {}, lastFinishedAt: null, leaderboard: [] };
 }
 
 function ensureEntry(state: DashboardRunState, id: string): ScreenerRunState {
@@ -121,11 +123,34 @@ export function applyEvent(state: DashboardRunState, event: RunEvent): Dashboard
       state.lastFinishedAt = Date.now();
       return state;
     }
+    case "leaderboard": {
+      const rows = Array.isArray(event.top) ? event.top : [];
+      const clean: LeaderboardEntry[] = [];
+      for (const row of rows) {
+        if (typeof row !== "object" || row === null) continue;
+        const r = row as unknown as Record<string, unknown>;
+        if (typeof r.ticker !== "string" || typeof r.appearances !== "number" ||
+            typeof r.best_rank !== "number") continue;
+        clean.push({ ticker: r.ticker, appearances: r.appearances, best_rank: r.best_rank });
+        if (clean.length >= MAX_BOARD_ROWS) break;
+      }
+      state.leaderboard = clean;
+      return state;
+    }
     case "error": {
       state.overall = `error: ${event.message}`;
       return state;
     }
   }
+}
+
+/** Top-10 cross-screener leaderboard lines for the board panel. */
+export function describeLeaderboard(state: DashboardRunState): string {
+  if (state.leaderboard.length === 0) return "No leaderboard yet — run some screeners.";
+  return state.leaderboard
+    .slice(0, MAX_BOARD_ROWS)
+    .map((row, i) => `#${i + 1} ${row.ticker} · ${row.appearances}x (best #${row.best_rank})`)
+    .join("\n");
 }
 
 /** Rankings come only from validated `top` rows; otherwise show summary/report. */

@@ -34,6 +34,7 @@ export type RunEventType =
   | "screener_started"
   | "output_line"
   | "screener_finished"
+  | "leaderboard"
   | "run_finished"
   | "error";
 
@@ -68,6 +69,17 @@ export interface ScreenerFinishedEvent extends BaseEvent {
   result_error?: string;
 }
 
+export interface LeaderboardEntry {
+  ticker: string;
+  appearances: number;
+  best_rank: number;
+}
+
+export interface LeaderboardEvent extends BaseEvent {
+  type: "leaderboard";
+  top: LeaderboardEntry[];
+}
+
 export interface RunFinishedEvent extends BaseEvent {
   type: "run_finished";
   status: string;
@@ -83,6 +95,7 @@ export type RunEvent =
   | ScreenerStartedEvent
   | OutputLineEvent
   | ScreenerFinishedEvent
+  | LeaderboardEvent
   | RunFinishedEvent
   | ErrorEvent;
 
@@ -106,4 +119,5 @@ export interface DashboardRunState {
   overall: string;
   byScreener: Record<string, ScreenerRunState>;
   lastFinishedAt: number | null;
+  leaderboard: LeaderboardEntry[];
 }
