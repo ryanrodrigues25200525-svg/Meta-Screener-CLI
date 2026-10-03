@@ -1,12 +1,13 @@
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runDashboard } from "./app.js";
 import { renderDashboardText } from "./layout.js";
 import { groupByStage, loadRegistryFile, orderedScreeners, SelectionModel } from "./registry.js";
 import { blankRunState } from "./events.js";
 import { joinPath, layoutForWidth, resolveRuntime } from "./runtime.js";
 
-const here = dirname(new URL(import.meta.url).pathname);
+const here = dirname(fileURLToPath(import.meta.url));
 const tuiDir = resolve(here, "..");
 const { root, python } = resolveRuntime(process.env as Record<string, string | undefined>, tuiDir);
 
