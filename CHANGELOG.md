@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `PYTHON_TOOLS.md` catalog of the tracked Python files, grouped by purpose
   and built from each module's own docstring.
+- Dated session recap and OpenCode handoff in
+  `docs/SESSION_RECAP_2026-10-03.md`, including TUI design, validation evidence,
+  and phased follow-up work.
 - `archive/one-off-migrations/2026/` preserving the ten one-off vault
   repair/backfill scripts as historical source, with a readme describing
   their one-off nature.
